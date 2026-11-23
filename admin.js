@@ -1,611 +1,586 @@
 
-/* ==========================================
-   LIFETRACK ADMIN CONTROL CENTRE
-   ADMIN DASHBOARD JAVASCRIPT
-========================================== */
-
 document.addEventListener("DOMContentLoaded", async () => {
+    "use strict";
 
-    // ======================================
-    // 1. SUPABASE CONNECTION
-    // ======================================
+    const supabase = window.lifeTrackSupabase;
 
-    const supabaseClient = window.lifeTrackSupabase;
+    const BASE_URL = "https://upgraded-seven.vercel.app";
 
-    if (!supabaseClient) {
-        console.error("LifeTrack Supabase is not connected.");
+    if (!supabase) {
+        alert("LifeTrack could not connect to Supabase.");
         return;
     }
 
+    const $ = (id) => document.getElementById(id);
 
-    // ======================================
-    // 2. ELEMENTS
-    // ======================================
+    let currentAdmin = null;
+    let paymentRequests = [];
+    let customers = [];
+    let subscriptions = [];
 
-    const sidebar = document.getElementById("sidebar");
-    const menuToggle = document.getElementById("menuToggle");
-    const pageTitle = document.getElementById("pageTitle");
-    const logoutButton = document.getElementById("adminLogout");
+    // ----------------------------------
+    // ADMIN AUTHENTICATION
+    // ----------------------------------
 
-    const navLinks = document.querySelectorAll(".nav-link[data-page]");
-    const pageSections = document.querySelectorAll(".page-section");
+    async function verifyAdmin() {
+        const { data, error } = await supabase.auth.getUser();
 
-    const paymentRequests = document.getElementById("paymentRequests");
-    const paymentSearch = document.getElementById("paymentSearch");
-    const paymentStatusFilter = document.getElementById("paymentStatusFilter");
-    const paymentMethodFilter = document.getElementById("paymentMethodFilter");
-    const refreshPayments = document.getElementById("refreshPayments");
-
-
-    // ======================================
-    // 3. PAGE TITLES
-    // ======================================
-
-    const pageNames = {
-        overview: "Overview",
-        payments: "Payment Management",
-        vouchers: "Voucher Centre",
-        customers: "Customer Management",
-        subscriptions: "Subscription Management",
-        analytics: "Platform Analytics",
-        activity: "Activity Logs",
-        settings: "Platform Settings"
-    };
-
-
-    // ======================================
-    // 4. ADMIN AUTHENTICATION
-    // ======================================
-
-    async function checkAdminAccess() {
-
-        const {
-            data: { user },
-            error
-        } = await supabaseClient.auth.getUser();
-
-        if (error || !user) {
-            window.location.replace("auth.html");
+        if (error || !data.user) {
+            window.location.href = `${BASE_URL}/auth.html`;
             return false;
         }
 
-        const isAdmin = user.app_metadata?.role === "admin";
+        const user = data.user;
 
-        if (!isAdmin) {
-            alert("Access denied. Administrator privileges are required.");
-            await supabaseClient.auth.signOut();
-            window.location.replace("auth.html");
+        if (user.app_metadata?.role !== "admin") {
+            alert("Administrator access required.");
+            window.location.href = `${BASE_URL}/dashboard.html`;
             return false;
         }
 
-        const adminEmail = document.getElementById("adminEmail");
+        currentAdmin = user;
 
-        if (adminEmail) {
-            adminEmail.textContent = user.email || "Administrator";
+        if ($("adminEmail")) {
+            $("adminEmail").textContent = user.email || "Administrator";
+        }
+
+        if ($("profileName")) {
+            $("profileName").textContent =
+                user.user_metadata?.full_name || "Administrator";
         }
 
         return true;
     }
 
+    // ----------------------------------
+    // NOTIFICATIONS
+    // ----------------------------------
 
-    const hasAdminAccess = await checkAdminAccess();
+    function notify(message, type = "info") {
+        console.log(`[LifeTrack ${type}] ${message}`);
 
-    if (!hasAdminAccess) return;
+        const messageBox = $("adminMessage");
 
-
-    // ======================================
-    // 5. PAGE NAVIGATION
-    // ======================================
-
-    function openPage(pageName) {
-
-        if (!pageNames[pageName]) return;
-
-        navLinks.forEach(link => {
-            link.classList.toggle(
-                "active",
-                link.dataset.page === pageName
-            );
-        });
-
-        pageSections.forEach(section => {
-            section.classList.toggle(
-                "active",
-                section.id === pageName
-            );
-        });
-
-        if (pageTitle) {
-            pageTitle.textContent = pageNames[pageName];
-        }
-
-        history.replaceState(null, "", `#${pageName}`);
-
-        if (sidebar) {
-            sidebar.classList.remove("open");
-        }
-
-        if (pageName === "payments") {
-            loadPaymentRequests();
+        if (messageBox) {
+            messageBox.textContent = message;
+            messageBox.className = `admin-message ${type}`;
+            messageBox.hidden = false;
+        } else {
+            alert(message);
         }
     }
 
+    function formatMoney(amount, currency = "KES") {
+        const value = Number(amount || 0);
 
-    navLinks.forEach(link => {
-
-        link.addEventListener("click", () => {
-            openPage(link.dataset.page);
-        });
-
-    });
-
-
-    // Buttons that navigate to another page
-    document.querySelectorAll("[data-page]").forEach(button => {
-
-        if (button.classList.contains("nav-link")) return;
-
-        button.addEventListener("click", () => {
-            openPage(button.dataset.page);
-        });
-
-    });
-
-
-    // Open page from URL hash
-    const requestedPage = window.location.hash.replace("#", "");
-
-    if (pageNames[requestedPage]) {
-        openPage(requestedPage);
+        return new Intl.NumberFormat("en-KE", {
+            style: "currency",
+            currency: currency || "KES",
+            maximumFractionDigits: 2
+        }).format(value);
     }
 
+    function formatDate(date) {
+        if (!date) return "—";
 
-    // ======================================
-    // 6. MOBILE SIDEBAR
-    // ======================================
-
-    if (menuToggle && sidebar) {
-
-        menuToggle.addEventListener("click", () => {
-            sidebar.classList.toggle("open");
+        return new Date(date).toLocaleDateString("en-KE", {
+            year: "numeric",
+            month: "short",
+            day: "numeric"
         });
-
-        document.addEventListener("click", event => {
-
-            const clickedInsideSidebar = sidebar.contains(event.target);
-            const clickedMenuButton = menuToggle.contains(event.target);
-
-            if (
-                !clickedInsideSidebar &&
-                !clickedMenuButton
-            ) {
-                sidebar.classList.remove("open");
-            }
-
-        });
-
     }
-
-
-    // ======================================
-    // 7. PAYMENT MANAGEMENT
-    // ======================================
-
-    let allPayments = [];
-
-
-    function updatePaymentStatistics(payments) {
-
-        const total = payments.length;
-
-        const pending = payments.filter(
-            payment => payment.status === "pending"
-        ).length;
-
-        const verified = payments.filter(
-            payment => payment.status === "verified"
-        ).length;
-
-        const rejected = payments.filter(
-            payment => payment.status === "rejected"
-        ).length;
-
-        document.getElementById("paymentTotal").textContent = total;
-        document.getElementById("paymentPending").textContent = pending;
-        document.getElementById("paymentVerified").textContent = verified;
-        document.getElementById("paymentRejected").textContent = rejected;
-
-        const badge = document.getElementById("paymentBadge");
-
-        if (badge) {
-            badge.textContent = pending;
-        }
-
-        const overviewPending = document.getElementById("pendingPayments");
-
-        if (overviewPending) {
-            overviewPending.textContent = pending;
-        }
-    }
-
-
-    function formatDate(dateValue) {
-
-        if (!dateValue) return "Not available";
-
-        return new Date(dateValue).toLocaleString("en-KE", {
-            dateStyle: "medium",
-            timeStyle: "short"
-        });
-
-    }
-
 
     function escapeHTML(value) {
-
-        return String(value ?? "").replace(/[&<>"']/g, character => {
-
-            const entities = {
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                '"': "&quot;",
-                "'": "&#039;"
-            };
-
-            return entities[character];
-
-        });
-
+        return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+        })[character]);
     }
 
+    function setText(id, value) {
+        const element = $(id);
+        if (element) element.textContent = value;
+    }
+
+    // ----------------------------------
+    // PAGE NAVIGATION
+    // ----------------------------------
+
+    function initializeNavigation() {
+        const navigationLinks = document.querySelectorAll(
+            "[data-page], .nav-link"
+        );
+
+        navigationLinks.forEach((link) => {
+            link.addEventListener("click", () => {
+                const page = link.dataset.page;
+
+                if (!page) return;
+
+                document.querySelectorAll(".admin-page").forEach((section) => {
+                    section.classList.remove("active");
+                });
+
+                const target = $(`${page}Page`) ||
+                    $(`${page}-page`) ||
+                    $(page);
+
+                if (target) {
+                    target.classList.add("active");
+                }
+
+                navigationLinks.forEach((item) => {
+                    item.classList.remove("active");
+                });
+
+                link.classList.add("active");
+
+                if ($("pageTitle")) {
+                    $("pageTitle").textContent =
+                        link.dataset.title ||
+                        link.textContent.trim() ||
+                        page;
+                }
+
+                if (window.innerWidth <= 850) {
+                    $("sidebar")?.classList.remove("open");
+                }
+            });
+        });
+
+        $("menuToggle")?.addEventListener("click", () => {
+            $("sidebar")?.classList.toggle("open");
+        });
+    }
+
+    // ----------------------------------
+    // LOAD PAYMENT REQUESTS
+    // ----------------------------------
 
     async function loadPaymentRequests() {
+        const container = $("paymentRequests");
 
-        if (!paymentRequests) return;
+        if (container) {
+            container.innerHTML = "<p>Loading payment requests...</p>";
+        }
 
-        paymentRequests.innerHTML = `
-            <p>Loading payment records...</p>
-        `;
-
-        const {
-            data,
-            error
-        } = await supabaseClient
+        const { data, error } = await supabase
             .from("payment_requests")
             .select(`
                 id,
-                customer_name,
-                customer_email,
-                plan,
+                user_id,
+                subscription_id,
+                plan_name,
+                amount,
+                currency,
                 payment_method,
                 transaction_reference,
-                screenshot_path,
                 status,
+                admin_notes,
+                verified_at,
                 created_at
             `)
             .order("created_at", { ascending: false });
 
+        if (error) {
+            console.error("Payment loading error:", error);
+            if (container) {
+                container.innerHTML =
+                    "<p>Could not load payments. Check administrator database permissions.</p>";
+            }
+            return;
+        }
+
+        paymentRequests = data || [];
+
+        await attachCustomerDetails();
+        renderPaymentRequests();
+        updatePaymentStatistics();
+    }
+
+    async function attachCustomerDetails() {
+        const userIds = [
+            ...new Set(paymentRequests.map((payment) => payment.user_id))
+        ].filter(Boolean);
+
+        if (!userIds.length) return;
+
+        const { data, error } = await supabase
+            .from("profiles")
+            .select("id, full_name, email")
+            .in("id", userIds);
 
         if (error) {
-
-            console.error("Payment loading error:", error);
-
-            paymentRequests.innerHTML = `
-                <p>Unable to load payment records.
-                Check your Supabase permissions and database setup.</p>
-            `;
-
+            console.error("Customer details error:", error);
             return;
         }
 
+        const profileMap = new Map(
+            (data || []).map((profile) => [profile.id, profile])
+        );
 
-        allPayments = data || [];
-
-        updatePaymentStatistics(allPayments);
-
-        renderPaymentRequests();
-
+        paymentRequests = paymentRequests.map((payment) => ({
+            ...payment,
+            customer: profileMap.get(payment.user_id) || null
+        }));
     }
-
-
-    // ======================================
-    // 8. PAYMENT FILTERING
-    // ======================================
 
     function renderPaymentRequests() {
+        const container = $("paymentRequests");
+        if (!container) return;
 
-        if (!paymentRequests) return;
+        const search = ($("paymentSearch")?.value || "").toLowerCase();
+        const status = $("paymentStatusFilter")?.value || "";
+        const method = $("paymentMethodFilter")?.value || "";
 
-        const searchTerm = paymentSearch?.value
-            .trim()
-            .toLowerCase() || "";
-
-        const selectedStatus = paymentStatusFilter?.value || "all";
-        const selectedMethod = paymentMethodFilter?.value || "all";
-
-
-        const filteredPayments = allPayments.filter(payment => {
+        const filtered = paymentRequests.filter((payment) => {
+            const customerName = payment.customer?.full_name || "";
+            const customerEmail = payment.customer?.email || "";
 
             const matchesSearch = [
-                payment.customer_name,
-                payment.customer_email,
-                payment.transaction_reference
-            ].some(value =>
-                String(value || "").toLowerCase().includes(searchTerm)
-            );
+                customerName,
+                customerEmail,
+                payment.transaction_reference,
+                payment.plan_name
+            ].join(" ").toLowerCase().includes(search);
 
-            const matchesStatus =
-                selectedStatus === "all" ||
-                payment.status === selectedStatus;
-
-            const matchesMethod =
-                selectedMethod === "all" ||
-                payment.payment_method === selectedMethod;
-
-            return matchesSearch && matchesStatus && matchesMethod;
-
+            return matchesSearch &&
+                (!status || payment.status === status) &&
+                (!method || payment.payment_method === method);
         });
 
-
-        if (filteredPayments.length === 0) {
-
-            paymentRequests.innerHTML = `
-                <p>No payment records match your search.</p>
-            `;
-
+        if (!filtered.length) {
+            container.innerHTML = "<p>No payment requests found.</p>";
             return;
         }
 
+        container.innerHTML = filtered.map((payment) => `
+            <div class="payment-row">
+                <div>
+                    <strong>${escapeHTML(
+                        payment.customer?.full_name || "Customer"
+                    )}</strong>
+                    <small>${escapeHTML(
+                        payment.customer?.email || payment.user_id
+                    )}</small>
+                </div>
 
-        const tableRows = filteredPayments.map(payment => {
+                <div>
+                    ${escapeHTML(payment.plan_name)}
+                    <small>${escapeHTML(payment.payment_method)}</small>
+                </div>
 
-            const statusClass = escapeHTML(payment.status);
+                <div>
+                    ${formatMoney(payment.amount, payment.currency)}
+                    <small>${escapeHTML(
+                        payment.transaction_reference || "No reference"
+                    )}</small>
+                </div>
 
-            return `
-                <tr>
+                <div>
+                    <span class="status-badge ${escapeHTML(payment.status)}">
+                        ${escapeHTML(payment.status)}
+                    </span>
+                </div>
 
-                    <td>
-                        <strong>${escapeHTML(payment.customer_name)}</strong>
-                        <br>
-                        <small>${escapeHTML(payment.customer_email)}</small>
-                    </td>
+                <div>
+                    ${formatDate(payment.created_at)}
+                </div>
 
-                    <td>
-                        ${escapeHTML(payment.plan)}
-                    </td>
+                <div>
+                    <button
+                        type="button"
+                        class="view-payment"
+                        data-id="${escapeHTML(payment.id)}">
+                        View
+                    </button>
+                </div>
+            </div>
+        `).join("");
 
-                    <td>
-                        ${escapeHTML(payment.payment_method)}
-                    </td>
-
-                    <td>
-                        ${escapeHTML(payment.transaction_reference)}
-                    </td>
-
-                    <td>
-                        <span class="status-badge ${statusClass}">
-                            ${escapeHTML(payment.status)}
-                        </span>
-                    </td>
-
-                    <td>
-                        ${formatDate(payment.created_at)}
-                    </td>
-
-                    <td>
-                        <button
-                            type="button"
-                            class="view-payment"
-                            data-payment-id="${escapeHTML(payment.id)}"
-                        >
-                            View
-                        </button>
-                    </td>
-
-                </tr>
-            `;
-
-        }).join("");
-
-
-        paymentRequests.innerHTML = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>Customer</th>
-                        <th>Plan</th>
-                        <th>Method</th>
-                        <th>Reference</th>
-                        <th>Status</th>
-                        <th>Date</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    ${tableRows}
-                </tbody>
-            </table>
-        `;
-
-
-        // Open payment details
-        paymentRequests.querySelectorAll(".view-payment").forEach(button => {
-
+        container.querySelectorAll(".view-payment").forEach((button) => {
             button.addEventListener("click", () => {
-
-                const payment = allPayments.find(
-                    item => item.id === button.dataset.paymentId
-                );
-
-                if (payment) {
-                    showPaymentDetails(payment);
-                }
-
+                showPaymentDetails(button.dataset.id);
             });
-
         });
-
     }
 
+    function updatePaymentStatistics() {
+        const total = paymentRequests.length;
 
-    // ======================================
-    // 9. PAYMENT DETAILS
-    // ======================================
+        const pending = paymentRequests.filter(
+            (p) => p.status === "pending"
+        ).length;
 
-    async function showPaymentDetails(payment) {
+        const verified = paymentRequests.filter(
+            (p) => p.status === "verified"
+        );
 
-        const screenshotResult = await supabaseClient
-            .storage
-            .from("payment-screenshots")
-            .createSignedUrl(payment.screenshot_path, 60);
+        const rejected = paymentRequests.filter(
+            (p) => p.status === "rejected"
+        ).length;
 
+        const revenue = verified.reduce(
+            (sum, payment) => sum + Number(payment.amount || 0),
+            0
+        );
 
-        let screenshotHTML = `
-            <p>Screenshot unavailable.</p>
-        `;
+        setText("paymentTotal", total);
+        setText("paymentPending", pending);
+        setText("paymentVerified", verified.length);
+        setText("paymentRejected", rejected);
 
-        if (!screenshotResult.error && screenshotResult.data?.signedUrl) {
+        setText("pendingPayments", pending);
+        setText("verifiedPayments", verified.length);
+        setText("rejectedPayments", rejected);
+        setText("totalRevenue", formatMoney(revenue));
+        setText("paymentBadge", pending);
+    }
 
-            screenshotHTML = `
-                <a
-                    href="${escapeHTML(screenshotResult.data.signedUrl)}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Open payment screenshot
-                </a>
-            `;
+    function showPaymentDetails(id) {
+        const payment = paymentRequests.find((item) => item.id === id);
 
-        }
-
+        if (!payment) return;
 
         const details = [
-            `Customer: ${payment.customer_name}`,
-            `Email: ${payment.customer_email}`,
-            `Plan: ${payment.plan}`,
+            `Customer: ${payment.customer?.full_name || "Customer"}`,
+            `Email: ${payment.customer?.email || "Unavailable"}`,
+            `Plan: ${payment.plan_name}`,
+            `Amount: ${formatMoney(payment.amount, payment.currency)}`,
             `Method: ${payment.payment_method}`,
-            `Transaction reference: ${payment.transaction_reference}`,
+            `Reference: ${payment.transaction_reference || "None"}`,
             `Status: ${payment.status}`,
             `Submitted: ${formatDate(payment.created_at)}`
         ].join("\n");
 
-
-        alert(details + "\n\nPayment screenshot: " +
-            (screenshotResult.error ? "Unavailable" : "Available"));
-
-        // Screenshot link is also logged for now.
-        // A dedicated secure payment review window will be built next.
-        console.info("Payment screenshot:", screenshotHTML);
-
+        alert(details);
     }
 
+    // ----------------------------------
+    // LOAD CUSTOMERS
+    // ----------------------------------
 
-    // Search
-    if (paymentSearch) {
-        paymentSearch.addEventListener("input", renderPaymentRequests);
+    async function loadCustomers() {
+        const container = $("customerList") || $("customersList");
+
+        const { data, error } = await supabase
+            .from("profiles")
+            .select("id, full_name, email, created_at")
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            console.error("Customer loading error:", error);
+
+            if (container) {
+                container.innerHTML =
+                    "<p>Could not load customers. Check database permissions.</p>";
+            }
+            return;
+        }
+
+        customers = data || [];
+
+        setText("totalCustomers", customers.length);
+
+        if (!container) return;
+
+        if (!customers.length) {
+            container.innerHTML = "<p>No customers registered yet.</p>";
+            return;
+        }
+
+        container.innerHTML = customers.map((customer) => `
+            <div class="customer-row">
+                <strong>${escapeHTML(
+                    customer.full_name || "Customer"
+                )}</strong>
+                <span>${escapeHTML(customer.email || "No email")}</span>
+                <small>${formatDate(customer.created_at)}</small>
+            </div>
+        `).join("");
     }
 
-    // Status filter
-    if (paymentStatusFilter) {
-        paymentStatusFilter.addEventListener("change", renderPaymentRequests);
+    // ----------------------------------
+    // LOAD SUBSCRIPTIONS
+    // ----------------------------------
+
+    async function loadSubscriptions() {
+        const container = $("subscriptionList") ||
+            $("subscriptionsList");
+
+        const { data, error } = await supabase
+            .from("subscriptions")
+            .select(`
+                id,
+                user_id,
+                plan_name,
+                plan,
+                status,
+                starts_at,
+                expires_at,
+                created_at
+            `)
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            console.error("Subscription loading error:", error);
+
+            if (container) {
+                container.innerHTML =
+                    "<p>Could not load subscriptions. Check database permissions.</p>";
+            }
+            return;
+        }
+
+        subscriptions = data || [];
+
+        const active = subscriptions.filter(
+            (subscription) =>
+                subscription.status === "active" &&
+                (!subscription.expires_at ||
+                    new Date(subscription.expires_at) > new Date())
+        ).length;
+
+        setText("activeSubscriptions", active);
+
+        if (!container) return;
+
+        if (!subscriptions.length) {
+            container.innerHTML = "<p>No subscriptions found.</p>";
+            return;
+        }
+
+        container.innerHTML = subscriptions.map((subscription) => `
+            <div class="subscription-row">
+                <strong>${escapeHTML(
+                    subscription.plan_name || subscription.plan || "Plan"
+                )}</strong>
+                <span>${escapeHTML(subscription.status)}</span>
+                <small>User: ${escapeHTML(subscription.user_id)}</small>
+                <small>Expires: ${formatDate(subscription.expires_at)}</small>
+            </div>
+        `).join("");
     }
 
-    // Method filter
-    if (paymentMethodFilter) {
-        paymentMethodFilter.addEventListener("change", renderPaymentRequests);
-    }
+    // ----------------------------------
+    // VOUCHERS
+    // ----------------------------------
 
-    // Refresh
-    if (refreshPayments) {
-        refreshPayments.addEventListener("click", loadPaymentRequests);
-    }
+    function initializeVouchers() {
+        const form = $("voucherGeneratorForm");
 
+        if (!form) return;
 
-    // ======================================
-    // 10. VOUCHER FORM
-    // ======================================
-
-    const voucherForm = document.getElementById("voucherGeneratorForm");
-    const voucherMessage = document.getElementById("voucherMessage");
-
-    if (voucherForm) {
-
-        voucherForm.addEventListener("submit", async event => {
-
+        form.addEventListener("submit", (event) => {
             event.preventDefault();
 
-            const email = document.getElementById("voucherEmail").value.trim();
-            const plan = document.getElementById("voucherPlan").value;
-
-            if (!email || !plan) {
-
-                voucherMessage.textContent =
-                    "Please complete all voucher fields.";
-
-                return;
-            }
-
-            voucherMessage.textContent =
-                "Voucher generation will be connected to the secure backend next.";
-
-        });
-
-    }
-
-
-    // ======================================
-    // 11. ADMIN LOGOUT
-    // ======================================
-
-    if (logoutButton) {
-
-        logoutButton.addEventListener("click", async () => {
-
-            const confirmLogout = confirm(
-                "Are you sure you want to sign out?"
+            notify(
+                "Voucher generation is not connected yet. We need to create a secure vouchers table and backend function first.",
+                "warning"
             );
-
-            if (!confirmLogout) return;
-
-            const { error } = await supabaseClient.auth.signOut();
-
-            if (error) {
-
-                alert("Unable to sign out. Please try again.");
-                console.error(error);
-
-                return;
-            }
-
-            window.location.replace("auth.html");
-
         });
 
+        setText("vouchersIssued", "Not configured");
     }
 
+    // ----------------------------------
+    // NOTIFICATIONS
+    // ----------------------------------
 
-    // ======================================
-    // 12. INITIAL ADMIN OVERVIEW
-    // ======================================
+    function initializeNotifications() {
+        const form = $("notificationForm");
 
-    document.getElementById("totalCustomers").textContent = "—";
-    document.getElementById("activeSubscriptions").textContent = "—";
-    document.getElementById("vouchersIssued").textContent = "—";
+        if (!form) return;
 
-    // Load payment statistics on startup
-    await loadPaymentRequests();
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
 
-
-    // ======================================
-    // 13. ICONS
-    // ======================================
-
-    if (window.lucide) {
-        window.lucide.createIcons();
+            notify(
+                "Email notifications require a secure server-side email service. This form is not connected yet.",
+                "warning"
+            );
+        });
     }
 
-    console.log("LifeTrack Admin Control Centre initialized.");
+    // ----------------------------------
+    // SEARCH AND FILTERS
+    // ----------------------------------
 
+    function initializeFilters() {
+        $("paymentSearch")?.addEventListener(
+            "input",
+            renderPaymentRequests
+        );
+
+        $("paymentStatusFilter")?.addEventListener(
+            "change",
+            renderPaymentRequests
+        );
+
+        $("paymentMethodFilter")?.addEventListener(
+            "change",
+            renderPaymentRequests
+        );
+
+        $("refreshPayments")?.addEventListener(
+            "click",
+            loadPaymentRequests
+        );
+
+        const customerSearch = $("customerSearch");
+
+        customerSearch?.addEventListener("input", () => {
+            const query = customerSearch.value.toLowerCase();
+
+            document.querySelectorAll(".customer-row").forEach((row) => {
+                row.hidden = !row.textContent.toLowerCase().includes(query);
+            });
+        });
+    }
+
+    // ----------------------------------
+    // LOGOUT
+    // ----------------------------------
+
+    async function logout() {
+        const confirmed = confirm("Are you sure you want to log out?");
+
+        if (!confirmed) return;
+
+        const { error } = await supabase.auth.signOut();
+
+        if (error) {
+            notify(error.message, "error");
+            return;
+        }
+
+        window.location.href = `${BASE_URL}/auth.html`;
+    }
+
+    // ----------------------------------
+    // START ADMIN DASHBOARD
+    // ----------------------------------
+
+    const authorized = await verifyAdmin();
+
+    if (!authorized) return;
+
+    initializeNavigation();
+    initializeFilters();
+    initializeVouchers();
+    initializeNotifications();
+
+    $("adminLogout")?.addEventListener("click", logout);
+
+    await Promise.all([
+        loadPaymentRequests(),
+        loadCustomers(),
+        loadSubscriptions()
+    ]);
+
+    console.log("LifeTrack administrator dashboard initialized.");
 });
+           
