@@ -43,7 +43,7 @@ const resendCountdown = document.getElementById("resendCountdown");
 const backToLogin = document.getElementById("backToLogin");
 
 // CURRENT WEBSITE
-const SITE_URL = "https://my-trac.vercel.app";
+const SITE_URL = "https://upgraded-seven.vercel.app/";
 
 let resendTimer = null;
 let resendSeconds = 60;
@@ -200,7 +200,7 @@ async function sendPasswordRecovery(isResend = false) {
 
         const { error } =
             await supabaseClient.auth.resetPasswordForEmail(email, {
-                redirectTo: `${SITE_URL}/forgot-password.html`
+                redirectTo: `${https://upgraded-seven.vercel.app/}/forgot-password.html`
             });
 
         if (error) throw error;
@@ -256,7 +256,7 @@ async function redirectAfterLogin(user) {
         );
 
         setTimeout(() => {
-            window.location.href = `${SITE_URL}/admin.html`;
+            window.location.href = `${https://upgraded-seven.vercel.app/}/admin.html`;
         }, 1000);
 
         return;
@@ -283,7 +283,7 @@ async function redirectAfterLogin(user) {
         );
 
         setTimeout(() => {
-            window.location.href = `${SITE_URL}/dashboard.html`;
+            window.location.href = `${https://upgraded-seven.vercel.app/}/dashboard.html`;
         }, 1000);
 
     } else {
@@ -294,7 +294,7 @@ async function redirectAfterLogin(user) {
         );
 
         setTimeout(() => {
-            window.location.href = `${SITE_URL}/payment.html`;
+            window.location.href = `${https://upgraded-seven.vercel.app/}/payment.html`;
         }, 1000);
     }
 }
@@ -403,7 +403,7 @@ if (!supabaseClient) {
                             full_name: name
                         },
 
-                        emailRedirectTo: `${SITE_URL}/auth.html`
+                        emailRedirectTo: `${https://upgraded-seven.vercel.app/}/auth.html`
                     }
                 });
 
@@ -417,7 +417,7 @@ if (!supabaseClient) {
                 );
 
                 setTimeout(() => {
-                    window.location.href = `${SITE_URL}/payment.html`;
+                    window.location.href = `${https://upgraded-seven.vercel.app/}/payment.html`;
                 }, 1500);
 
             } else {
