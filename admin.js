@@ -3,24 +3,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     "use strict";
 
     const supabase = window.lifeTrackSupabase;
-
     const BASE_URL = "https://upgraded-seven.vercel.app";
-
-    if (!supabase) {
-        alert("LifeTrack could not connect to Supabase.");
-        return;
-    }
 
     const $ = (id) => document.getElementById(id);
 
-    let currentAdmin = null;
+    if (!supabase) {
+        alert("LifeTrack could not connect to Supabase.");
+        console.error("Supabase client is missing.");
+        return;
+    }
+
     let paymentRequests = [];
     let customers = [];
     let subscriptions = [];
 
-    // ----------------------------------
+    // -----------------------------
     // ADMIN AUTHENTICATION
-    // ----------------------------------
+    // -----------------------------
 
     async function verifyAdmin() {
         const { data, error } = await supabase.auth.getUser();
@@ -38,8 +37,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             return false;
         }
 
-        currentAdmin = user;
-
         if ($("adminEmail")) {
             $("adminEmail").textContent = user.email || "Administrator";
         }
@@ -52,42 +49,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         return true;
     }
 
-    // ----------------------------------
-    // NOTIFICATIONS
-    // ----------------------------------
+    // -----------------------------
+    // GENERAL HELPERS
+    // -----------------------------
 
     function notify(message, type = "info") {
         console.log(`[LifeTrack ${type}] ${message}`);
 
-        const messageBox = $("adminMessage");
+        const box = $("adminMessage");
 
-        if (messageBox) {
-            messageBox.textContent = message;
-            messageBox.className = `admin-message ${type}`;
-            messageBox.hidden = false;
+        if (box) {
+            box.textContent = message;
+            box.className = `admin-message ${type}`;
+            box.hidden = false;
         } else {
             alert(message);
         }
     }
 
-    function formatMoney(amount, currency = "KES") {
-        const value = Number(amount || 0);
-
-        return new Intl.NumberFormat("en-KE", {
-            style: "currency",
-            currency: currency || "KES",
-            maximumFractionDigits: 2
-        }).format(value);
-    }
-
-    function formatDate(date) {
-        if (!date) return "—";
-
-        return new Date(date).toLocaleDateString("en-KE", {
-            year: "numeric",
-            month: "short",
-            day: "numeric"
-        });
+    function setText(id, value) {
+        const element = $(id);
+        if (element) element.textContent = value;
     }
 
     function escapeHTML(value) {
@@ -100,19 +82,31 @@ document.addEventListener("DOMContentLoaded", async () => {
         })[character]);
     }
 
-    function setText(id, value) {
-        const element = $(id);
-        if (element) element.textContent = value;
+    function formatMoney(amount, currency = "KES") {
+        return new Intl.NumberFormat("en-KE", {
+            style: "currency",
+            currency: currency || "KES",
+            maximumFractionDigits: 2
+        }).format(Number(amount || 0));
     }
 
-    // ----------------------------------
-    // PAGE NAVIGATION
-    // ----------------------------------
+    function formatDate(date) {
+        if (!date) return "—";
+
+        return new Date(date).toLocaleDateString("en-KE", {
+            year: "numeric",
+            month: "short",
+            day: "numeric"
+        });
+    }
+
+    // -----------------------------
+    // DASHBOARD NAVIGATION
+    // -----------------------------
 
     function initializeNavigation() {
-        const navigationLinks = document.querySelectorAll(
-            "[data-page], .nav-link"
-        );
+        const navigationLinks =
+            document.querySelectorAll("[data-page]");
 
         navigationLinks.forEach((link) => {
             link.addEventListener("click", () => {
@@ -120,16 +114,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 if (!page) return;
 
-                document.querySelectorAll(".admin-page").forEach((section) => {
-                    section.classList.remove("active");
-                });
+                document.querySelectorAll(".page-section").forEach(
+                    (section) => {
+                        section.classList.remove("active");
+                    }
+                );
 
-                const target = $(`${page}Page`) ||
-                    $(`${page}-page`) ||
-                    $(page);
+                const target = $(page);
 
                 if (target) {
                     target.classList.add("active");
+                } else {
+                    console.error(`Dashboard page not found: ${page}`);
+                    return;
                 }
 
                 navigationLinks.forEach((item) => {
@@ -145,9 +142,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         page;
                 }
 
-                if (window.innerWidth <= 850) {
-                    $("sidebar")?.classList.remove("open");
-                }
+                $("sidebar")?.classList.remove("open");
             });
         });
 
@@ -156,9 +151,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // ----------------------------------
-    // LOAD PAYMENT REQUESTS
-    // ----------------------------------
+    // -----------------------------
+    // PAYMENT REQUESTS
+    // -----------------------------
 
     async function loadPaymentRequests() {
         const container = $("paymentRequests");
@@ -187,23 +182,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (error) {
             console.error("Payment loading error:", error);
+
             if (container) {
                 container.innerHTML =
                     "<p>Could not load payments. Check administrator database permissions.</p>";
             }
+
             return;
         }
 
         paymentRequests = data || [];
 
         await attachCustomerDetails();
+
         renderPaymentRequests();
         updatePaymentStatistics();
     }
 
     async function attachCustomerDetails() {
         const userIds = [
-            ...new Set(paymentRequests.map((payment) => payment.user_id))
+            ...new Set(
+                paymentRequests.map((payment) => payment.user_id)
+            )
         ].filter(Boolean);
 
         if (!userIds.length) return;
@@ -232,28 +232,53 @@ document.addEventListener("DOMContentLoaded", async () => {
         const container = $("paymentRequests");
         if (!container) return;
 
-        const search = ($("paymentSearch")?.value || "").toLowerCase();
-        const status = $("paymentStatusFilter")?.value || "";
-        const method = $("paymentMethodFilter")?.value || "";
+        const search =
+            ($("paymentSearch")?.value || "").toLowerCase().trim();
+
+        const status =
+            $("paymentStatusFilter")?.value || "all";
+
+        const method =
+            $("paymentMethodFilter")?.value || "all";
 
         const filtered = paymentRequests.filter((payment) => {
-            const customerName = payment.customer?.full_name || "";
-            const customerEmail = payment.customer?.email || "";
+            const customerName =
+                payment.customer?.full_name || "";
 
-            const matchesSearch = [
+            const customerEmail =
+                payment.customer?.email || "";
+
+            const searchText = [
                 customerName,
                 customerEmail,
                 payment.transaction_reference,
-                payment.plan_name
-            ].join(" ").toLowerCase().includes(search);
+                payment.plan_name,
+                payment.payment_method
+            ].join(" ").toLowerCase();
+
+            const matchesSearch = searchText.includes(search);
+
+            const matchesStatus =
+                status === "all" || payment.status === status;
+
+            let matchesMethod = true;
+
+            if (method === "airtel") {
+                matchesMethod =
+                    payment.payment_method === "Airtel Money";
+            } else if (method === "binance") {
+                matchesMethod =
+                    payment.payment_method === "Binance Pay";
+            }
 
             return matchesSearch &&
-                (!status || payment.status === status) &&
-                (!method || payment.payment_method === method);
+                matchesStatus &&
+                matchesMethod;
         });
 
         if (!filtered.length) {
-            container.innerHTML = "<p>No payment requests found.</p>";
+            container.innerHTML =
+                "<p>No payment requests found.</p>";
             return;
         }
 
@@ -269,7 +294,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 </div>
 
                 <div>
-                    ${escapeHTML(payment.plan_name)}
+                    ${escapeHTML(payment.plan_name || "Plan")}
                     <small>${escapeHTML(payment.payment_method)}</small>
                 </div>
 
@@ -286,9 +311,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     </span>
                 </div>
 
-                <div>
-                    ${formatDate(payment.created_at)}
-                </div>
+                <div>${formatDate(payment.created_at)}</div>
 
                 <div>
                     <button
@@ -312,15 +335,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         const total = paymentRequests.length;
 
         const pending = paymentRequests.filter(
-            (p) => p.status === "pending"
+            (payment) => payment.status === "pending"
         ).length;
 
         const verified = paymentRequests.filter(
-            (p) => p.status === "verified"
+            (payment) => payment.status === "verified"
         );
 
         const rejected = paymentRequests.filter(
-            (p) => p.status === "rejected"
+            (payment) => payment.status === "rejected"
         ).length;
 
         const revenue = verified.reduce(
@@ -341,11 +364,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function showPaymentDetails(id) {
-        const payment = paymentRequests.find((item) => item.id === id);
+        const payment = paymentRequests.find(
+            (item) => item.id === id
+        );
 
         if (!payment) return;
 
-        const details = [
+        alert([
             `Customer: ${payment.customer?.full_name || "Customer"}`,
             `Email: ${payment.customer?.email || "Unavailable"}`,
             `Plan: ${payment.plan_name}`,
@@ -353,18 +378,22 @@ document.addEventListener("DOMContentLoaded", async () => {
             `Method: ${payment.payment_method}`,
             `Reference: ${payment.transaction_reference || "None"}`,
             `Status: ${payment.status}`,
-            `Submitted: ${formatDate(payment.created_at)}`
-        ].join("\n");
-
-        alert(details);
+            `Submitted: ${formatDate(payment.created_at)}`,
+            "",
+            "Payment approval is not enabled yet."
+        ].join("\n"));
     }
 
-    // ----------------------------------
-    // LOAD CUSTOMERS
-    // ----------------------------------
+    // -----------------------------
+    // CUSTOMERS
+    // -----------------------------
 
     async function loadCustomers() {
-        const container = $("customerList") || $("customersList");
+        const container = $("customerRecords");
+
+        if (container) {
+            container.innerHTML = "<p>Loading customers...</p>";
+        }
 
         const { data, error } = await supabase
             .from("profiles")
@@ -378,6 +407,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 container.innerHTML =
                     "<p>Could not load customers. Check database permissions.</p>";
             }
+
             return;
         }
 
@@ -392,7 +422,29 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        container.innerHTML = customers.map((customer) => `
+        renderCustomers();
+    }
+
+    function renderCustomers() {
+        const container = $("customerRecords");
+        if (!container) return;
+
+        const search =
+            ($("customerSearch")?.value || "").toLowerCase().trim();
+
+        const filtered = customers.filter((customer) => {
+            return [
+                customer.full_name,
+                customer.email
+            ].join(" ").toLowerCase().includes(search);
+        });
+
+        if (!filtered.length) {
+            container.innerHTML = "<p>No matching customers found.</p>";
+            return;
+        }
+
+        container.innerHTML = filtered.map((customer) => `
             <div class="customer-row">
                 <strong>${escapeHTML(
                     customer.full_name || "Customer"
@@ -403,13 +455,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         `).join("");
     }
 
-    // ----------------------------------
-    // LOAD SUBSCRIPTIONS
-    // ----------------------------------
+    // -----------------------------
+    // SUBSCRIPTIONS
+    // -----------------------------
 
     async function loadSubscriptions() {
-        const container = $("subscriptionList") ||
-            $("subscriptionsList");
+        const container = $("subscriptionRecords");
+
+        if (container) {
+            container.innerHTML = "<p>Loading subscriptions...</p>";
+        }
 
         const { data, error } = await supabase
             .from("subscriptions")
@@ -432,17 +487,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                 container.innerHTML =
                     "<p>Could not load subscriptions. Check database permissions.</p>";
             }
+
             return;
         }
 
         subscriptions = data || [];
 
-        const active = subscriptions.filter(
-            (subscription) =>
-                subscription.status === "active" &&
-                (!subscription.expires_at ||
-                    new Date(subscription.expires_at) > new Date())
-        ).length;
+        const active = subscriptions.filter((subscription) => {
+            return subscription.status === "active" &&
+                (
+                    !subscription.expires_at ||
+                    new Date(subscription.expires_at) > new Date()
+                );
+        }).length;
 
         setText("activeSubscriptions", active);
 
@@ -456,18 +513,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         container.innerHTML = subscriptions.map((subscription) => `
             <div class="subscription-row">
                 <strong>${escapeHTML(
-                    subscription.plan_name || subscription.plan || "Plan"
+                    subscription.plan_name ||
+                    subscription.plan ||
+                    "Plan"
                 )}</strong>
+
                 <span>${escapeHTML(subscription.status)}</span>
+
                 <small>User: ${escapeHTML(subscription.user_id)}</small>
+
                 <small>Expires: ${formatDate(subscription.expires_at)}</small>
             </div>
         `).join("");
     }
 
-    // ----------------------------------
+    // -----------------------------
     // VOUCHERS
-    // ----------------------------------
+    // -----------------------------
 
     function initializeVouchers() {
         const form = $("voucherGeneratorForm");
@@ -478,7 +540,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             event.preventDefault();
 
             notify(
-                "Voucher generation is not connected yet. We need to create a secure vouchers table and backend function first.",
+                "Voucher generation is not connected yet. A secure vouchers database and backend function are required.",
                 "warning"
             );
         });
@@ -486,9 +548,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         setText("vouchersIssued", "Not configured");
     }
 
-    // ----------------------------------
+    // -----------------------------
     // NOTIFICATIONS
-    // ----------------------------------
+    // -----------------------------
 
     function initializeNotifications() {
         const form = $("notificationForm");
@@ -499,15 +561,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             event.preventDefault();
 
             notify(
-                "Email notifications require a secure server-side email service. This form is not connected yet.",
+                "Email notifications require a secure server-side email service.",
                 "warning"
             );
         });
     }
 
-    // ----------------------------------
-    // SEARCH AND FILTERS
-    // ----------------------------------
+    // -----------------------------
+    // FILTERS AND BUTTONS
+    // -----------------------------
 
     function initializeFilters() {
         $("paymentSearch")?.addEventListener(
@@ -530,25 +592,20 @@ document.addEventListener("DOMContentLoaded", async () => {
             loadPaymentRequests
         );
 
-        const customerSearch = $("customerSearch");
-
-        customerSearch?.addEventListener("input", () => {
-            const query = customerSearch.value.toLowerCase();
-
-            document.querySelectorAll(".customer-row").forEach((row) => {
-                row.hidden = !row.textContent.toLowerCase().includes(query);
-            });
-        });
+        $("customerSearch")?.addEventListener(
+            "input",
+            renderCustomers
+        );
     }
 
-    // ----------------------------------
+    // -----------------------------
     // LOGOUT
-    // ----------------------------------
+    // -----------------------------
 
     async function logout() {
-        const confirmed = confirm("Are you sure you want to log out?");
-
-        if (!confirmed) return;
+        if (!confirm("Are you sure you want to log out?")) {
+            return;
+        }
 
         const { error } = await supabase.auth.signOut();
 
@@ -560,9 +617,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.location.href = `${BASE_URL}/auth.html`;
     }
 
-    // ----------------------------------
-    // START ADMIN DASHBOARD
-    // ----------------------------------
+    // -----------------------------
+    // START DASHBOARD
+    // -----------------------------
 
     const authorized = await verifyAdmin();
 
@@ -581,6 +638,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         loadSubscriptions()
     ]);
 
-    console.log("LifeTrack administrator dashboard initialized.");
+    console.log(
+        "LifeTrack administrator dashboard initialized successfully."
+    );
 });
-           
+                        
