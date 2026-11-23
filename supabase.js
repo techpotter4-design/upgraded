@@ -5,7 +5,8 @@
 
 const SUPABASE_URL = "https://lqulzslsyyxvoatyjlch.supabase.co";
 
-const SUPABASE_KEY = "sb_publishable___G7CxED5jCxSluqYIOGFw_iZM1hDXy";
+const SUPABASE_KEY = "sb_publishable___G7CxED5jCxSluqYIOGFw_iZM1hDXy
+   ";
 
 if (!window.supabase) {
     console.error("Supabase library did not load.");
