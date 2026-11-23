@@ -1,18 +1,86 @@
-/* =================================
-   LIFETRACK SUPABASE CONFIGURATION
-================================= */
 
-const SUPABASE_URL = "https://lqulzslsyyxvoatyjlch.supabase.co";
+/* =========================================
+   LIFETRACK — SUPABASE CONFIGURATION
+   Version 3.0
+========================================= */
 
-const SUPABASE_KEY = "sb_publishable___G7CxED5jCxSluqYIOGFw_iZM1hDXy";
+(() => {
+    "use strict";
 
-if (!window.supabase) {
-    console.error("Supabase library did not load.");
-} else {
-    window.lifeTrackSupabase = window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
-    );
+    // =====================================
+    // SUPABASE PROJECT CONFIGURATION
+    // =====================================
 
-    console.log("LifeTrack Supabase connected successfully.");
-}
+    const SUPABASE_URL =
+        "https://lqulzslsyyxvoatyjlch.supabase.co";
+
+    const SUPABASE_PUBLISHABLE_KEY =
+        "sb_publishable_8BthqYECrHbDfTi1De89lg_GquT4dkN";
+
+    // =====================================
+    // CHECK SUPABASE LIBRARY
+    // =====================================
+
+    if (!window.supabase) {
+        console.error(
+            "LifeTrack: Supabase library failed to load."
+        );
+
+        window.lifeTrackSupabase = null;
+        return;
+    }
+
+    if (typeof window.supabase.createClient !== "function") {
+        console.error(
+            "LifeTrack: Supabase createClient function is unavailable."
+        );
+
+        window.lifeTrackSupabase = null;
+        return;
+    }
+
+    // =====================================
+    // VALIDATE CONFIGURATION
+    // =====================================
+
+    if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+        console.error(
+            "LifeTrack: Supabase configuration is incomplete."
+        );
+
+        window.lifeTrackSupabase = null;
+        return;
+    }
+
+    // =====================================
+    // INITIALIZE SUPABASE CLIENT
+    // =====================================
+
+    try {
+        window.lifeTrackSupabase =
+            window.supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_PUBLISHABLE_KEY,
+                {
+                    auth: {
+                        autoRefreshToken: true,
+                        persistSession: true,
+                        detectSessionInUrl: true
+                    }
+                }
+            );
+
+        console.log(
+            "LifeTrack: Supabase connected successfully."
+        );
+
+    } catch (error) {
+        console.error(
+            "LifeTrack: Supabase initialization failed:",
+            error
+        );
+
+        window.lifeTrackSupabase = null;
+    }
+
+})();
