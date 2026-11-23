@@ -1,0 +1,364 @@
+
+/* =================================
+   LIFETRACK PREMIUM PAYMENT CENTRE
+================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary: #7047eb;
+    --primary-dark: #5231c7;
+    --dark: #17152b;
+    --text: #29263d;
+    --muted: #77748a;
+    --light: #f7f6fc;
+    --white: #ffffff;
+    --border: #e9e6f2;
+    --success: #168653;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: var(--light);
+    color: var(--text);
+    line-height: 1.6;
+}
+
+/* HEADER */
+
+.payment-header {
+    background: var(--white);
+    padding: 18px 7%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+}
+
+.logo {
+    font-size: 25px;
+    font-weight: 800;
+    color: var(--dark);
+    text-decoration: none;
+}
+
+.logo span {
+    color: var(--primary);
+}
+
+.back-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* MAIN CONTAINER */
+
+.payment-container {
+    width: 90%;
+    max-width: 1050px;
+    margin: 45px auto;
+}
+
+.payment-intro {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+.eyebrow {
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.payment-intro h1 {
+    font-size: 38px;
+    color: var(--dark);
+    margin: 8px 0;
+}
+
+.payment-intro p {
+    color: var(--muted);
+    max-width: 550px;
+    margin: auto;
+}
+
+/* SECTIONS */
+
+.payment-section {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 30px rgba(30, 20, 70, 0.04);
+}
+
+.payment-section h2 {
+    font-size: 19px;
+    margin-bottom: 22px;
+    color: var(--dark);
+}
+
+/* SUBSCRIPTION PLANS */
+
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.plan-card {
+    display: block;
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 22px 17px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.plan-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-3px);
+}
+
+.plan-card:has(input:checked) {
+    border: 2px solid var(--primary);
+    background: #f7f4ff;
+}
+
+.plan-card input {
+    accent-color: var(--primary);
+    margin-bottom: 12px;
+}
+
+.plan-card h3 {
+    font-size: 17px;
+    margin-bottom: 8px;
+}
+
+.price {
+    color: var(--primary);
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.plan-card p:last-child {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.featured {
+    border-color: var(--primary);
+}
+
+.plan-tag {
+    display: inline-block;
+    background: var(--primary);
+    color: var(--white);
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 800;
+    margin-bottom: 9px;
+}
+
+/* PAYMENT METHODS */
+
+.method-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.method-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 19px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.method-card:has(input:checked) {
+    border: 2px solid var(--primary);
+    background: #f7f4ff;
+}
+
+.method-card input {
+    accent-color: var(--primary);
+}
+
+/* INSTRUCTIONS */
+
+.instructions {
+    background: #f5f2ff;
+    border-radius: 12px;
+    padding: 18px;
+    margin-top: 18px;
+    color: var(--text);
+}
+
+.instructions p {
+    font-size: 14px;
+}
+
+/* FORMS */
+
+.form-group {
+    margin-bottom: 19px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    font-size: 14px;
+    outline: none;
+    background: #fff;
+}
+
+.form-group input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(112, 71, 235, 0.09);
+}
+
+.form-group input[type="file"] {
+    background: var(--light);
+}
+
+/* BUTTONS */
+
+.payment-button,
+.voucher-button {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 9px;
+    background: var(--primary);
+    color: var(--white);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.payment-button:hover,
+.voucher-button:hover {
+    background: var(--primary-dark);
+}
+
+.payment-button:disabled,
+.voucher-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* VOUCHER */
+
+.voucher-section {
+    background: #fcfbff;
+}
+
+.voucher-section > p {
+    color: var(--muted);
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.voucher-button {
+    background: var(--dark);
+}
+
+.voucher-button:hover {
+    background: #302b4b;
+}
+
+/* SUPPORT */
+
+.support-section {
+    background: var(--dark);
+    color: var(--white);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+}
+
+.support-section h2 {
+    margin-bottom: 10px;
+}
+
+.support-section p {
+    color: #d3d0e0;
+    margin: 8px 0;
+}
+
+.support-section a {
+    color: #b9a7ff;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+/* MESSAGES */
+
+#paymentMessage,
+#voucherMessage {
+    margin-top: 14px;
+    font-size: 14px;
+}
+
+/* FOOTER */
+
+footer {
+    text-align: center;
+    padding: 25px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* MOBILE RESPONSIVENESS */
+
+@media (max-width: 700px) {
+
+    .payment-container {
+        width: 92%;
+        margin: 30px auto;
+    }
+
+    .payment-intro h1 {
+        font-size: 30px;
+    }
+
+    .plans-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .method-options {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-section {
+        padding: 20px;
+    }
+
+    .payment-header {
+        padding: 16px 5%;
+    }
+}

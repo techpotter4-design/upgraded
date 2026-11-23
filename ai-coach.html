@@ -1,0 +1,344 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>LifeTrack AI Coach | Personal Growth</title>
+
+    <meta name="description" content="Your personal LifeTrack AI Coach for habits, mood reflection, goals and personal growth.">
+
+    <link rel="stylesheet" href="css/ai-coach.css">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+
+<div class="coach-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="coach-sidebar" id="coachSidebar">
+
+        <div class="coach-logo">
+            LifeTrack<span>.</span>
+            <small>AI COACH</small>
+        </div>
+
+        <a href="dashboard.html" class="back-dashboard">
+            <i data-lucide="arrow-left"></i>
+            <span>Back to Dashboard</span>
+        </a>
+
+        <button type="button" class="new-chat-button" id="newChatButton">
+            <i data-lucide="plus"></i>
+            <span>New Conversation</span>
+        </button>
+
+        <div class="coach-nav-heading">COACHING AREAS</div>
+
+        <nav class="coach-navigation">
+
+            <a href="#chat" class="coach-nav-link active" data-coach-mode="general">
+                <i data-lucide="message-circle"></i>
+                <span>AI Conversation</span>
+            </a>
+
+            <a href="#chat" class="coach-nav-link" data-coach-mode="habits">
+                <i data-lucide="repeat"></i>
+                <span>Habit Coach</span>
+            </a>
+
+            <a href="#chat" class="coach-nav-link" data-coach-mode="mood">
+                <i data-lucide="heart"></i>
+                <span>Mood Coach</span>
+            </a>
+
+            <a href="#chat" class="coach-nav-link" data-coach-mode="goals">
+                <i data-lucide="target"></i>
+                <span>Goal Strategist</span>
+            </a>
+
+            <a href="#chat" class="coach-nav-link" data-coach-mode="routine">
+                <i data-lucide="calendar-check"></i>
+                <span>Daily Routine</span>
+            </a>
+
+        </nav>
+
+        <div class="coach-sidebar-footer">
+            <div class="coach-status-indicator"></div>
+            <span>Personal Growth Workspace</span>
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="coach-main">
+
+        <!-- TOPBAR -->
+        <header class="coach-topbar">
+
+            <button
+                type="button"
+                class="coach-menu-toggle"
+                id="coachMenuToggle"
+                aria-label="Toggle navigation"
+            >
+                <i data-lucide="menu"></i>
+            </button>
+
+            <div class="coach-topbar-title">
+                <h2>LifeTrack AI Coach</h2>
+                <p>Your personal growth companion</p>
+            </div>
+
+            <div class="coach-topbar-status">
+                <span class="status-dot"></span>
+                AI Workspace
+            </div>
+
+        </header>
+
+
+        <!-- CONTENT -->
+        <section class="coach-content" id="chat">
+
+            <!-- WELCOME SECTION -->
+            <div class="coach-welcome">
+
+                <div class="coach-welcome-icon">
+                    <i data-lucide="brain-circuit"></i>
+                </div>
+
+                <span class="coach-eyebrow">YOUR PERSONAL GROWTH PARTNER</span>
+
+                <h1>Build a better version of yourself.</h1>
+
+                <p>
+                    Reflect on your progress, understand your habits,
+                    organise your goals and create routines that move
+                    your life forward.
+                </p>
+
+            </div>
+
+
+            <!-- CHAT WORKSPACE -->
+            <div class="coach-workspace">
+
+                <div class="chat-panel">
+
+                    <div class="chat-panel-header">
+
+                        <div class="chat-agent-info">
+
+                            <div class="chat-agent-icon">
+                                <i data-lucide="sparkles"></i>
+                            </div>
+
+                            <div>
+                                <h3>Your AI Coach</h3>
+                                <p>Personal Growth Assistant</p>
+                            </div>
+
+                        </div>
+
+                        <button
+                            type="button"
+                            class="clear-chat-button"
+                            id="clearChatButton"
+                        >
+                            <i data-lucide="trash-2"></i>
+                            <span>Clear Chat</span>
+                        </button>
+
+                    </div>
+
+
+                    <!-- CHAT MESSAGES -->
+                    <div class="chat-messages" id="chatMessages">
+
+                        <div class="coach-message assistant-message">
+
+                            <div class="message-avatar">
+                                <i data-lucide="brain-circuit"></i>
+                            </div>
+
+                            <div class="message-content">
+                                <p>
+                                    Welcome to your LifeTrack AI Coach.
+                                    I'm here to help you build better habits,
+                                    reflect on your mood, organise your goals
+                                    and make meaningful progress.
+                                </p>
+                                <span class="message-time">Your coach</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- SUGGESTED PROMPTS -->
+                    <div class="chat-suggestions" id="chatSuggestions">
+
+                        <button
+                            type="button"
+                            class="suggestion-button"
+                            data-coach-prompt="Help me build a consistent daily routine."
+                        >
+                            Build my daily routine
+                        </button>
+
+                        <button
+                            type="button"
+                            class="suggestion-button"
+                            data-coach-prompt="Help me understand why I struggle to maintain habits."
+                        >
+                            Improve my habits
+                        </button>
+
+                        <button
+                            type="button"
+                            class="suggestion-button"
+                            data-coach-prompt="Help me create a realistic plan for my goals."
+                        >
+                            Plan my goals
+                        </button>
+
+                        <button
+                            type="button"
+                            class="suggestion-button"
+                            data-coach-prompt="Guide me through a mood reflection exercise."
+                        >
+                            Reflect on my mood
+                        </button>
+
+                    </div>
+
+
+                    <!-- MESSAGE INPUT -->
+                    <form class="coach-chat-form" id="coachChatForm">
+
+                        <div class="chat-input-wrapper">
+
+                            <textarea
+                                id="coachMessage"
+                                name="message"
+                                rows="1"
+                                placeholder="Ask your AI coach anything..."
+                                required
+                            ></textarea>
+
+                            <button
+                                type="submit"
+                                id="coachSendButton"
+                                aria-label="Send message"
+                            >
+                                <i data-lucide="send"></i>
+                            </button>
+
+                        </div>
+
+                        <p class="chat-disclaimer">
+                            AI responses can make mistakes. Review important
+                            advice carefully.
+                        </p>
+
+                    </form>
+
+                </div>
+
+
+                <!-- RIGHT INFORMATION PANEL -->
+                <aside class="coach-information">
+
+                    <div class="coach-info-card">
+
+                        <div class="info-card-icon">
+                            <i data-lucide="target"></i>
+                        </div>
+
+                        <h3>Focus on progress</h3>
+
+                        <p>
+                            Turn big ambitions into small, realistic
+                            daily actions.
+                        </p>
+
+                    </div>
+
+
+                    <div class="coach-info-card">
+
+                        <div class="info-card-icon">
+                            <i data-lucide="activity"></i>
+                        </div>
+
+                        <h3>Understand your patterns</h3>
+
+                        <p>
+                            Reflect on your routines and identify
+                            opportunities to improve.
+                        </p>
+
+                    </div>
+
+
+                    <div class="coach-info-card">
+
+                        <div class="info-card-icon">
+                            <i data-lucide="shield-check"></i>
+                        </div>
+
+                        <h3>Your growth matters</h3>
+
+                        <p>
+                            Your personal information should be handled
+                            securely and respectfully.
+                        </p>
+
+                    </div>
+
+
+                    <div class="coach-plan-card">
+
+                        <span>YOUR LIFEtrack EXPERIENCE</span>
+
+                        <h3>Keep moving forward.</h3>
+
+                        <p>
+                            Consistency is built one decision at a time.
+                        </p>
+
+                    </div>
+
+                </aside>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- JAVASCRIPT FILES -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/ai-coach.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    });
+</script>
+
+</body>
+</html>

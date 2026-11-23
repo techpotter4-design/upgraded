@@ -1,0 +1,1087 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>LifeTrack | Admin Control Centre</title>
+
+    <link rel="stylesheet" href="css/admin.css">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+
+<div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+
+        <div class="brand">
+            <a href="admin.html">LifeTrack<span>.</span></a>
+            <p>OWNER CONTROL CENTRE</p>
+        </div>
+
+        <div class="owner-profile">
+            <div class="owner-avatar">
+                <i data-lucide="shield-check"></i>
+            </div>
+
+            <div class="owner-details">
+                <strong>Administrator</strong>
+                <small>Platform Owner</small>
+            </div>
+
+            <span class="online-indicator"></span>
+        </div>
+
+        <nav class="sidebar-nav">
+
+            <p class="nav-label">WORKSPACE</p>
+
+            <button class="nav-link active" data-page="overview">
+                <i data-lucide="layout-dashboard"></i>
+                <span>Overview</span>
+            </button>
+
+            <button class="nav-link" data-page="payments">
+                <i data-lucide="wallet"></i>
+                <span>Payments</span>
+                <span class="nav-badge" id="paymentBadge">0</span>
+            </button>
+
+            <button class="nav-link" data-page="vouchers">
+                <i data-lucide="ticket"></i>
+                <span>Voucher Centre</span>
+            </button>
+
+            <p class="nav-label">CUSTOMER MANAGEMENT</p>
+
+            <button class="nav-link" data-page="customers">
+                <i data-lucide="users"></i>
+                <span>Customers</span>
+            </button>
+
+            <button class="nav-link" data-page="subscriptions">
+                <i data-lucide="credit-card"></i>
+                <span>Subscriptions</span>
+            </button>
+
+            <button class="nav-link" data-page="notifications">
+                <i data-lucide="send"></i>
+                <span>Client Notifications</span>
+            </button>
+
+            <p class="nav-label">INTELLIGENCE</p>
+
+            <button class="nav-link" data-page="analytics">
+                <i data-lucide="chart-no-axes-combined"></i>
+                <span>Analytics</span>
+            </button>
+
+            <button class="nav-link" data-page="activity">
+                <i data-lucide="activity"></i>
+                <span>Activity Logs</span>
+            </button>
+
+            <p class="nav-label">CONFIGURATION</p>
+
+            <button class="nav-link" data-page="settings">
+                <i data-lucide="settings"></i>
+                <span>Settings</span>
+            </button>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <div class="security-status">
+                <i data-lucide="shield-check"></i>
+                <span>Secure Admin Environment</span>
+            </div>
+
+            <button id="adminLogout" class="logout-btn">
+                <i data-lucide="log-out"></i>
+                <span>Sign Out</span>
+            </button>
+
+            <p class="admin-version">
+                LifeTrack Admin · Version 1.0
+            </p>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                <button id="menuToggle" class="menu-toggle"
+                    aria-label="Open navigation">
+                    <i data-lucide="menu"></i>
+                </button>
+
+                <div class="topbar-title">
+                    <h1 id="pageTitle">Overview</h1>
+                    <p id="pageSubtitle">
+                        Welcome to your platform control centre.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="topbar-right">
+
+                <div class="system-status">
+                    <span class="status-dot"></span>
+                    System Control
+                </div>
+
+
+                <!-- ADMIN NOTIFICATIONS -->
+                <div class="topbar-dropdown">
+
+                    <button
+                        class="top-icon"
+                        id="adminNotifications"
+                        aria-label="Notifications"
+                        aria-expanded="false"
+                        aria-controls="notificationPanel">
+
+                        <i data-lucide="bell"></i>
+                        <span class="notification-indicator"
+                            id="notificationIndicator"></span>
+
+                    </button>
+
+                    <div class="dropdown-panel notification-panel"
+                        id="notificationPanel" hidden>
+
+                        <div class="dropdown-heading">
+
+                            <div>
+                                <h3>Notifications</h3>
+                                <p>Administrator alerts</p>
+                            </div>
+
+                            <button id="markAllNotifications"
+                                class="text-button">
+                                Mark all read
+                            </button>
+
+                        </div>
+
+                        <div id="notificationList">
+
+                            <div class="empty-notifications">
+                                <i data-lucide="bell-ring"></i>
+                                <p>No notifications yet.</p>
+                            </div>
+
+                        </div>
+
+                        <button class="notification-footer"
+                            data-page="activity">
+                            View activity logs
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ADMIN PROFILE -->
+                <div class="topbar-dropdown">
+
+                    <button
+                        class="profile-trigger"
+                        id="adminProfileButton"
+                        aria-expanded="false"
+                        aria-controls="profilePanel">
+
+                        <span class="top-avatar">
+                            <i data-lucide="user-round"></i>
+                        </span>
+
+                        <i data-lucide="chevron-down"></i>
+
+                    </button>
+
+                    <div class="dropdown-panel profile-panel"
+                        id="profilePanel" hidden>
+
+                        <div class="profile-panel-header">
+
+                            <div class="top-avatar large">
+                                <i data-lucide="user-round"></i>
+                            </div>
+
+                            <div>
+                                <strong id="profileName">
+                                    Administrator
+                                </strong>
+                                <small id="profileEmail">
+                                    Account information
+                                </small>
+                            </div>
+
+                        </div>
+
+                        <div class="profile-menu">
+
+                            <button data-page="settings">
+                                <i data-lucide="user-round"></i>
+                                My Profile
+                            </button>
+
+                            <button data-page="settings">
+                                <i data-lucide="settings"></i>
+                                Account Settings
+                            </button>
+
+                            <button data-page="activity">
+                                <i data-lucide="history"></i>
+                                Account Activity
+                            </button>
+
+                            <button id="profileLogout">
+                                <i data-lucide="log-out"></i>
+                                Sign Out
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- =================================
+             OVERVIEW
+        ================================== -->
+        <section class="page-section active" id="overview">
+
+            <div class="welcome-banner">
+
+                <div>
+                    <span class="banner-label">OWNER CONTROL CENTRE</span>
+                    <h2>Good to see you, Administrator.</h2>
+                    <p>
+                        Here's what's happening across your LifeTrack platform.
+                    </p>
+                </div>
+
+                <div class="banner-icon">
+                    <i data-lucide="chart-no-axes-combined"></i>
+                </div>
+
+            </div>
+
+
+            <div class="section-heading">
+                <div>
+                    <h2>Business Performance</h2>
+                    <p>Your platform at a glance.</p>
+                </div>
+            </div>
+
+
+            <div class="stats-grid">
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Total Revenue</span>
+                        <i data-lucide="wallet"></i>
+                    </div>
+                    <h2 id="totalRevenue">KSh 0</h2>
+                    <small>Verified payments only</small>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Monthly Revenue</span>
+                        <i data-lucide="trending-up"></i>
+                    </div>
+                    <h2 id="monthlyRevenue">KSh 0</h2>
+                    <small>Current calendar month</small>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Total Customers</span>
+                        <i data-lucide="users"></i>
+                    </div>
+                    <h2 id="totalCustomers">0</h2>
+                    <small>Registered accounts</small>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Active Subscriptions</span>
+                        <i data-lucide="credit-card"></i>
+                    </div>
+                    <h2 id="activeSubscriptions">0</h2>
+                    <small>Currently active plans</small>
+                </article>
+
+            </div>
+
+
+            <div class="section-heading">
+                <div>
+                    <h2>Payment Performance</h2>
+                    <p>Monitor incoming customer payments.</p>
+                </div>
+
+                <button class="text-button" data-page="payments">
+                    Manage Payments
+                    <i data-lucide="arrow-up-right"></i>
+                </button>
+            </div>
+
+
+            <div class="stats-grid">
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Pending Payments</span>
+                        <i data-lucide="clock"></i>
+                    </div>
+                    <h2 id="pendingPayments">0</h2>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Verified Payments</span>
+                        <i data-lucide="shield-check"></i>
+                    </div>
+                    <h2 id="verifiedPayments">0</h2>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Rejected Payments</span>
+                        <i data-lucide="x-circle"></i>
+                    </div>
+                    <h2 id="rejectedPayments">0</h2>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Vouchers Issued</span>
+                        <i data-lucide="ticket-check"></i>
+                    </div>
+                    <h2 id="vouchersIssued">0</h2>
+                </article>
+
+            </div>
+
+
+            <div class="content-grid">
+
+                <article class="content-card">
+                    <div class="card-heading">
+                        <div>
+                            <h3>Revenue Overview</h3>
+                            <p>Monthly business performance</p>
+                        </div>
+                        <i data-lucide="chart-line"></i>
+                    </div>
+
+                    <div id="revenueChart" class="dashboard-chart">
+                        Revenue analytics will appear here.
+                    </div>
+                </article>
+
+                <article class="content-card">
+                    <div class="card-heading">
+                        <div>
+                            <h3>Subscription Distribution</h3>
+                            <p>Customer plan breakdown</p>
+                        </div>
+                        <i data-lucide="chart-pie"></i>
+                    </div>
+
+                    <div id="planDistribution">
+                        Subscription statistics will appear here.
+                    </div>
+                </article>
+
+            </div>
+
+
+            <div class="content-grid">
+
+                <article class="content-card">
+                    <div class="card-heading">
+                        <div>
+                            <h3>Recent Transactions</h3>
+                            <p>Latest customer payments</p>
+                        </div>
+
+                        <button class="text-button" data-page="payments">
+                            View All
+                        </button>
+                    </div>
+
+                    <div id="recentPayments">
+                        Transaction records will appear here.
+                    </div>
+                </article>
+
+                <article class="content-card">
+                    <div class="card-heading">
+                        <div>
+                            <h3>Platform Activity</h3>
+                            <p>Latest system events</p>
+                        </div>
+                        <i data-lucide="activity"></i>
+                    </div>
+
+                    <div id="platformActivity">
+                        Activity records will appear here.
+                    </div>
+                </article>
+
+            </div>
+
+
+            <div class="section-heading">
+                <div>
+                    <h2>Quick Actions</h2>
+                    <p>Access important management tools.</p>
+                </div>
+            </div>
+
+
+            <div class="content-grid">
+
+                <button class="quick-action-card" data-page="payments">
+                    <i data-lucide="wallet"></i>
+                    <strong>Review Payments</strong>
+                    <span>Verify customer transactions</span>
+                </button>
+
+                <button class="quick-action-card" data-page="vouchers">
+                    <i data-lucide="ticket"></i>
+                    <strong>Issue Voucher</strong>
+                    <span>Generate customer access codes</span>
+                </button>
+
+                <button class="quick-action-card" data-page="customers">
+                    <i data-lucide="users"></i>
+                    <strong>Manage Customers</strong>
+                    <span>View customer accounts</span>
+                </button>
+
+                <button class="quick-action-card" data-page="notifications">
+                    <i data-lucide="send"></i>
+                    <strong>Send Notification</strong>
+                    <span>Contact your customers</span>
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================
+             PAYMENTS
+        ================================== -->
+        <section class="page-section" id="payments">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Payment Management</h2>
+                    <p>Review and verify customer transactions.</p>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Total Requests</span>
+                        <i data-lucide="receipt"></i>
+                    </div>
+                    <h2 id="paymentTotal">0</h2>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Pending Review</span>
+                        <i data-lucide="clock"></i>
+                    </div>
+                    <h2 id="paymentPending">0</h2>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Verified</span>
+                        <i data-lucide="shield-check"></i>
+                    </div>
+                    <h2 id="paymentVerified">0</h2>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Rejected</span>
+                        <i data-lucide="x-circle"></i>
+                    </div>
+                    <h2 id="paymentRejected">0</h2>
+                </article>
+
+            </div>
+
+            <div class="content-card">
+
+                <div class="card-heading">
+                    <div>
+                        <h3>Customer Transactions</h3>
+                        <p>Review submitted payment requests.</p>
+                    </div>
+
+                    <button class="text-button" id="refreshPayments">
+                        <i data-lucide="refresh-cw"></i>
+                        Refresh
+                    </button>
+                </div>
+
+                <div class="payment-filters">
+
+                    <input type="search"
+                        id="paymentSearch"
+                        placeholder="Search customer or reference...">
+
+                    <select id="paymentStatusFilter">
+                        <option value="all">All statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="verified">Verified</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+
+                    <select id="paymentMethodFilter">
+                        <option value="all">All methods</option>
+                        <option value="airtel">Airtel Money</option>
+                        <option value="binance">Binance Pay</option>
+                    </select>
+
+                </div>
+
+                <div id="paymentRequests">
+                    Payment records will appear here.
+                </div>
+
+            </div>
+
+            <div class="content-card">
+                <h3>Verification Policy</h3>
+                <p>
+                    All payments require manual administrator verification.
+                    Screenshots alone are not proof of payment.
+                    Vouchers are issued manually after successful verification.
+                </p>
+            </div>
+
+        </section>
+
+
+        <!-- =================================
+             VOUCHERS
+        ================================== -->
+        <section class="page-section" id="vouchers">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Voucher Centre</h2>
+                    <p>Manage customer subscription access codes.</p>
+                </div>
+            </div>
+
+            <div class="content-card">
+
+                <h3>Generate New Voucher</h3>
+
+                <form id="voucherGeneratorForm">
+
+                    <label for="voucherEmail">Customer Email</label>
+                    <input type="email" id="voucherEmail"
+                        placeholder="Enter customer email" required>
+
+                    <label for="voucherPlan">Subscription Plan</label>
+
+                    <select id="voucherPlan" required>
+                        <option value="">Select plan</option>
+                        <option value="trial">Trial — KSh 200 / 5 Days</option>
+                        <option value="standard">Standard — KSh 800 / 30 Days</option>
+                        <option value="advanced">Advanced — KSh 1,500 / 30 Days</option>
+                    </select>
+
+                    <button type="submit" id="generateVoucher">
+                        <i data-lucide="ticket-plus"></i>
+                        Generate Voucher
+                    </button>
+
+                    <p id="voucherMessage"></p>
+
+                </form>
+
+            </div>
+
+            <div class="content-card">
+                <h3>Issued Vouchers</h3>
+                <div id="issuedVouchers">
+                    Voucher records will appear here.
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- =================================
+             CUSTOMERS
+        ================================== -->
+        <section class="page-section" id="customers">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Customer Management</h2>
+                    <p>Manage registered LifeTrack customers.</p>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <h3>Customer Records</h3>
+                <div id="customerRecords">
+                    Customer records will appear here.
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- =================================
+             SUBSCRIPTIONS
+        ================================== -->
+        <section class="page-section" id="subscriptions">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Subscription Management</h2>
+                    <p>Monitor plans, activation and expiry.</p>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <h3>Subscription Records</h3>
+                <div id="subscriptionRecords">
+                    Subscription records will appear here.
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- =================================
+             CLIENT NOTIFICATIONS
+        ================================== -->
+        <section class="page-section" id="notifications">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Client Notification Centre</h2>
+                    <p>
+                        Send announcements and important updates
+                        directly to LifeTrack customers.
+                    </p>
+                </div>
+            </div>
+
+
+            <!-- NOTIFICATION STATISTICS -->
+            <div class="stats-grid">
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Notifications Sent</span>
+                        <i data-lucide="send"></i>
+                    </div>
+                    <h2 id="notificationsSent">0</h2>
+                    <small>Total messages sent</small>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Recipients</span>
+                        <i data-lucide="users"></i>
+                    </div>
+                    <h2 id="notificationRecipients">0</h2>
+                    <small>Customers reached</small>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-top">
+                        <span>Read Messages</span>
+                        <i data-lucide="mail-open"></i>
+                    </div>
+                    <h2 id="notificationsRead">0</h2>
+                    <small>Customer reads</small>
+                </article>
+
+            </div>
+
+
+            <!-- COMPOSER -->
+            <div class="content-card notification-composer">
+
+                <div class="card-heading">
+                    <div>
+                        <h3>Compose New Notification</h3>
+                        <p>Create a message for your customers.</p>
+                    </div>
+
+                    <i data-lucide="message-square-more"></i>
+                </div>
+
+
+                <form id="clientNotificationForm">
+
+                    <div class="form-group">
+
+                        <label for="notificationTitle">
+                            Notification Title
+                        </label>
+
+                        <input
+                            type="text"
+                            id="notificationTitle"
+                            maxlength="100"
+                            placeholder="e.g. Important LifeTrack Update"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="notificationType">
+                            Notification Category
+                        </label>
+
+                        <select id="notificationType" required>
+
+                            <option value="announcement">
+                                General Announcement
+                            </option>
+
+                            <option value="subscription">
+                                Subscription Update
+                            </option>
+
+                            <option value="payment">
+                                Payment Update
+                            </option>
+
+                            <option value="voucher">
+                                Voucher Update
+                            </option>
+
+                            <option value="alert">
+                                Important Alert
+                            </option>
+
+                            <option value="maintenance">
+                                Maintenance Notice
+                            </option>
+
+                            <option value="promotion">
+                                Promotion
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="notificationAudience">
+                            Select Recipients
+                        </label>
+
+                        <select id="notificationAudience" required>
+
+                            <option value="all">
+                                All Customers
+                            </option>
+
+                            <option value="individual">
+                                Individual Customer
+                            </option>
+
+                            <option value="trial">
+                                Trial Customers
+                            </option>
+
+                            <option value="standard">
+                                Standard Customers
+                            </option>
+
+                            <option value="advanced">
+                                Advanced Customers
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group" id="individualCustomerField" hidden>
+
+                        <label for="notificationCustomerEmail">
+                            Customer Email
+                        </label>
+
+                        <input
+                            type="email"
+                            id="notificationCustomerEmail"
+                            placeholder="Enter registered customer email"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="notificationMessage">
+                            Message
+                        </label>
+
+                        <textarea
+                            id="notificationMessage"
+                            rows="6"
+                            maxlength="2000"
+                            placeholder="Write your message to customers..."
+                            required
+                        ></textarea>
+
+                        <div class="character-counter"
+                            id="notificationCharacterCount">
+                            0 / 2000 characters
+                        </div>
+
+                    </div>
+
+
+                    <div class="notification-preview">
+
+                        <div class="preview-heading">
+                            <i data-lucide="eye"></i>
+                            Message Preview
+                        </div>
+
+                        <div class="preview-notification">
+
+                            <span id="previewType">
+                                GENERAL ANNOUNCEMENT
+                            </span>
+
+                            <h4 id="previewTitle">
+                                Your notification title
+                            </h4>
+
+                            <p id="previewMessage">
+                                Your message will appear here.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="notification-form-footer">
+
+                        <p id="clientNotificationMessage"
+                            aria-live="polite"></p>
+
+                        <button
+                            type="submit"
+                            id="sendClientNotification">
+
+                            <i data-lucide="send"></i>
+                            Send Notification
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+
+            <!-- SENT NOTIFICATIONS -->
+            <div class="content-card">
+
+                <div class="card-heading">
+
+                    <div>
+                        <h3>Sent Notifications</h3>
+                        <p>Review previously sent customer messages.</p>
+                    </div>
+
+                    <button class="text-button"
+                        id="refreshClientNotifications">
+
+                        <i data-lucide="refresh-cw"></i>
+                        Refresh
+
+                    </button>
+
+                </div>
+
+                <div id="sentClientNotifications">
+                    Notification history will appear here.
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================
+             ANALYTICS
+        ================================== -->
+        <section class="page-section" id="analytics">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Platform Analytics</h2>
+                    <p>Understand your business performance.</p>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <h3>Business Performance</h3>
+                <div id="analyticsContent">
+                    Analytics will appear here.
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- =================================
+             ACTIVITY
+        ================================== -->
+        <section class="page-section" id="activity">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Activity Logs</h2>
+                    <p>Monitor important platform events.</p>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <h3>System Activity</h3>
+                <div id="activityRecords">
+                    Activity records will appear here.
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- =================================
+             SETTINGS
+        ================================== -->
+        <section class="page-section" id="settings">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Administrator Profile & Settings</h2>
+                    <p>Manage your administrator account.</p>
+                </div>
+            </div>
+
+            <div class="content-card">
+
+                <div class="card-heading">
+                    <h3>Account Information</h3>
+                    <i data-lucide="user-round"></i>
+                </div>
+
+                <div class="profile-information">
+
+                    <div class="profile-avatar-large">
+                        <i data-lucide="user-round"></i>
+                    </div>
+
+                    <div>
+                        <h3 id="settingsProfileName">
+                            Administrator
+                        </h3>
+
+                        <p id="adminEmail">
+                            Account email will appear here.
+                        </p>
+
+                        <span class="profile-role">
+                            Platform Administrator
+                        </span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="content-card">
+
+                <div class="card-heading">
+                    <h3>Account Security</h3>
+                    <i data-lucide="shield-check"></i>
+                </div>
+
+                <p>
+                    Account authentication and administrator permissions
+                    are managed through the secure authentication system.
+                </p>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+<script src="js/admin.js"></script>
+
+<script>
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+</script>
+
+</body>
+</html>
