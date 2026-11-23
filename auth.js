@@ -42,14 +42,6 @@ const resendResetButton = document.getElementById("resendResetLink");
 const resendCountdown = document.getElementById("resendCountdown");
 const backToLogin = document.getElementById("backToLogin");
 
-// CURRENT WEBSITE
-const SITE_URL = "https://upgraded-seven.vercel.app/";
-
-let resendTimer = null;
-let resendSeconds = 60;
-let recoveryEmailSent = false;
-
-
 // =====================================
 // MESSAGE FUNCTIONS
 // =====================================
