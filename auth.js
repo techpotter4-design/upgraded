@@ -1,385 +1,540 @@
 
-/* =====================================
-   LIFETRACK AUTHENTICATION
-   SUPABASE LOGIN & REGISTRATION
-   PASSWORD RECOVERY + RESEND
-   ADMIN ROLE REDIRECT
-===================================== */
+/* =========================================
+   LIFETRACK AUTHENTICATION SYSTEM
+   Version 2.0
 
-const supabaseClient = window.lifeTrackSupabase;
+   FEATURES:
+   - User Registration
+   - User Login
+   - Password Visibility
+   - Password Recovery
+   - Resend Reset Link
+   - Resend Countdown
+   - Admin Authentication
+   - Subscription Verification
+   - Dashboard Redirection
+   - Payment Redirection
+   - Error Handling
+========================================= */
 
-// FORM ELEMENTS
-const loginForm = document.getElementById("loginForm");
-const registerForm = document.getElementById("registerForm");
-const resetPasswordForm = document.getElementById("resetPasswordForm");
+(() => {
+    "use strict";
 
-// INPUT ELEMENTS
-const loginEmail = document.getElementById("loginEmail");
-const loginPassword = document.getElementById("loginPassword");
+    // =====================================
+    // CONFIGURATION
+    // =====================================
 
-const fullName = document.getElementById("fullName");
-const registerEmail = document.getElementById("registerEmail");
-const registerPassword = document.getElementById("registerPassword");
-const confirmPassword = document.getElementById("confirmPassword");
-const acceptTerms = document.getElementById("acceptTerms");
+    const supabaseClient = window.lifeTrackSupabase;
 
-const resetEmail = document.getElementById("resetEmail");
+    const BASE_URL = "https://upgraded-seven.vercel.app";
 
-// MESSAGES
-const authMessage = document.getElementById("authMessage");
-const resetMessage = document.getElementById("resetMessage");
+    const ROUTES = {
+        home: `${BASE_URL}/index.html`,
+        auth: `${BASE_URL}/auth.html`,
+        admin: `${BASE_URL}/admin.html`,
+        dashboard: `${BASE_URL}/dashboard.html`,
+        payment: `${BASE_URL}/payment.html`,
+        recovery: `${BASE_URL}/forgot-password.html`
+    };
 
-// PAGE ELEMENTS
-const formTitle = document.getElementById("formTitle");
-const formDescription = document.getElementById("formDescription");
-const switchText = document.getElementById("switchText");
-const switchContainer = document.getElementById("switchContainer");
+    // =====================================
+    // DOM ELEMENTS
+    // =====================================
 
-// RECOVERY ELEMENTS
-const forgotPasswordLink = document.getElementById("forgotPasswordLink");
-const sendResetButton = document.getElementById("sendResetLink");
-const resendResetButton = document.getElementById("resendResetLink");
-const resendCountdown = document.getElementById("resendCountdown");
-const backToLogin = document.getElementById("backToLogin");
+    const $ = id => document.getElementById(id);
 
-// =====================================
-// MESSAGE FUNCTIONS
-// =====================================
+    const loginForm = $("loginForm");
+    const registerForm = $("registerForm");
+    const resetPasswordForm = $("resetPasswordForm");
 
-function showMessage(message, success = false) {
-    if (!authMessage) return;
+    const loginEmail = $("loginEmail");
+    const loginPassword = $("loginPassword");
 
-    authMessage.textContent = message;
-    authMessage.style.color = success ? "#267548" : "#c0392b";
-}
+    const fullName = $("fullName");
+    const registerEmail = $("registerEmail");
+    const registerPassword = $("registerPassword");
+    const confirmPassword = $("confirmPassword");
 
-function showResetMessage(message, success = false) {
-    if (!resetMessage) return;
+    const acceptTerms = $("acceptTerms");
 
-    resetMessage.textContent = message;
-    resetMessage.style.color = success ? "#267548" : "#c0392b";
-}
+    const resetEmail = $("resetEmail");
 
+    const authMessage = $("authMessage");
+    const resetMessage = $("resetMessage");
 
-// =====================================
-// FORM SWITCHING
-// =====================================
+    const formTitle = $("formTitle");
+    const formDescription = $("formDescription");
 
-function displayForm(type) {
-    loginForm.classList.add("hidden");
-    registerForm.classList.add("hidden");
-    resetPasswordForm.classList.add("hidden");
+    const switchText = $("switchText");
+    const switchContainer = $("switchContainer");
 
-    authMessage.textContent = "";
-    resetMessage.textContent = "";
+    const forgotPasswordLink = $("forgotPasswordLink");
+    const backToLogin = $("backToLogin");
 
-    if (type === "register") {
+    const sendResetButton = $("sendResetLink");
+    const resendResetButton = $("resendResetLink");
+    const resendCountdown = $("resendCountdown");
 
-        registerForm.classList.remove("hidden");
+    // =====================================
+    // APPLICATION STATE
+    // =====================================
 
-        formTitle.textContent = "Create Account";
-        formDescription.textContent =
-            "Start building better habits with LifeTrack.";
+    let recoveryEmailSent = false;
+    let resendTimer = null;
+    let resendSeconds = 60;
 
-        switchContainer.hidden = false;
+    // =====================================
+    // MESSAGE HANDLING
+    // =====================================
 
-        switchText.innerHTML =
-            'Already have an account? <button type="button" id="showLogin">Login</button>';
+    function showMessage(message, success = false) {
 
-        document.getElementById("showLogin").addEventListener("click", () => {
-            displayForm("login");
+        if (!authMessage) return;
+
+        authMessage.textContent = message;
+
+        authMessage.style.color = success
+            ? "#267548"
+            : "#c0392b";
+    }
+
+    function showResetMessage(message, success = false) {
+
+        if (!resetMessage) return;
+
+        resetMessage.textContent = message;
+
+        resetMessage.style.color = success
+            ? "#267548"
+            : "#c0392b";
+    }
+
+    function clearMessages() {
+
+        if (authMessage) authMessage.textContent = "";
+        if (resetMessage) resetMessage.textContent = "";
+        if (resendCountdown) resendCountdown.textContent = "";
+    }
+
+    // =====================================
+    // BUTTON LOADING
+    // =====================================
+
+    function setLoading(button, state, loadingText, normalText) {
+
+        if (!button) return;
+
+        button.disabled = state;
+
+        button.textContent = state
+            ? loadingText
+            : normalText;
+    }
+
+    // =====================================
+    // FORM SWITCHING
+    // =====================================
+
+    function displayForm(type = "login") {
+
+        [loginForm, registerForm, resetPasswordForm].forEach(form => {
+
+            if (form) {
+                form.classList.add("hidden");
+            }
+
         });
 
-    } else if (type === "reset") {
+        clearMessages();
 
-        resetPasswordForm.classList.remove("hidden");
+        if (type === "register") {
 
-        formTitle.textContent = "Reset Password";
-        formDescription.textContent =
-            "Enter your email to receive a password reset link.";
+            registerForm.classList.remove("hidden");
 
-        switchContainer.hidden = true;
+            formTitle.textContent = "Create Account";
 
-        if (resendResetButton) {
-            resendResetButton.hidden = !recoveryEmailSent;
+            formDescription.textContent =
+                "Start building better habits with LifeTrack.";
+
+            switchContainer.hidden = false;
+
+            switchText.replaceChildren(
+                document.createTextNode(
+                    "Already have an account? "
+                )
+            );
+
+            const button = document.createElement("button");
+
+            button.type = "button";
+            button.textContent = "Login";
+
+            button.addEventListener("click", () => {
+                displayForm("login");
+            });
+
+            switchText.appendChild(button);
+
+            return;
         }
 
-    } else {
+        if (type === "reset") {
+
+            resetPasswordForm.classList.remove("hidden");
+
+            formTitle.textContent = "Reset Password";
+
+            formDescription.textContent =
+                "Enter your email to receive a password reset link.";
+
+            switchContainer.hidden = true;
+
+            if (sendResetButton) {
+                sendResetButton.hidden = recoveryEmailSent;
+            }
+
+            if (resendResetButton) {
+                resendResetButton.hidden = !recoveryEmailSent;
+                resendResetButton.disabled = recoveryEmailSent;
+            }
+
+            return;
+        }
 
         loginForm.classList.remove("hidden");
 
         formTitle.textContent = "Welcome Back";
+
         formDescription.textContent =
             "Login to continue your personal growth journey.";
 
         switchContainer.hidden = false;
 
-        switchText.innerHTML =
-            'Don\'t have an account? <button type="button" id="showRegister">Create Account</button>';
+        switchText.replaceChildren(
+            document.createTextNode(
+                "Don't have an account? "
+            )
+        );
 
-        document.getElementById("showRegister").addEventListener("click", () => {
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.textContent = "Create Account";
+
+        button.addEventListener("click", () => {
             displayForm("register");
         });
+
+        switchText.appendChild(button);
     }
-}
 
+    // =====================================
+    // PASSWORD VISIBILITY
+    // =====================================
 
-// =====================================
-// RESEND COUNTDOWN
-// =====================================
+    function initializePasswordVisibility() {
 
-function startResendCountdown() {
-    if (!resendResetButton || !resendCountdown) return;
+        document.querySelectorAll(".show-password").forEach(button => {
 
-    clearInterval(resendTimer);
+            button.addEventListener("click", () => {
 
-    resendSeconds = 60;
+                const input = $(button.dataset.target);
 
-    resendResetButton.disabled = true;
-    resendResetButton.hidden = false;
-    resendResetButton.textContent = "Resend Reset Link";
+                if (!input) return;
 
-    resendCountdown.textContent =
-        "You can request another link in 60 seconds.";
+                const isHidden = input.type === "password";
 
-    resendTimer = setInterval(() => {
+                input.type = isHidden ? "text" : "password";
 
-        resendSeconds--;
+                button.textContent = isHidden ? "Hide" : "Show";
 
-        if (resendSeconds > 0) {
+                button.setAttribute(
+                    "aria-pressed",
+                    String(isHidden)
+                );
 
-            resendCountdown.textContent =
-                `You can request another link in ${resendSeconds} seconds.`;
+            });
 
-        } else {
+        });
+    }
 
+    // =====================================
+    // PASSWORD RECOVERY COUNTDOWN
+    // =====================================
+
+    function startResendCountdown() {
+
+        if (!resendResetButton || !resendCountdown) return;
+
+        if (resendTimer) {
             clearInterval(resendTimer);
-
-            resendResetButton.disabled = false;
-
-            resendCountdown.textContent =
-                "You can now request another reset link.";
         }
 
-    }, 1000);
-}
+        resendSeconds = 60;
 
+        resendResetButton.hidden = false;
+        resendResetButton.disabled = true;
 
-// =====================================
-// PASSWORD RECOVERY
-// =====================================
+        resendResetButton.textContent = "Resend Reset Link";
 
-async function sendPasswordRecovery(isResend = false) {
+        resendCountdown.textContent =
+            `You can request another link in ${resendSeconds} seconds.`;
 
-    const email = resetEmail.value.trim();
+        resendTimer = setInterval(() => {
 
-    if (!email) {
-        showResetMessage("Please enter your email address.");
-        resetEmail.focus();
-        return;
+            resendSeconds--;
+
+            if (resendSeconds > 0) {
+
+                resendCountdown.textContent =
+                    `You can request another link in ${resendSeconds} seconds.`;
+
+            } else {
+
+                clearInterval(resendTimer);
+                resendTimer = null;
+
+                resendResetButton.disabled = false;
+
+                resendCountdown.textContent =
+                    "You can now request another reset link.";
+
+            }
+
+        }, 1000);
     }
 
-    if (isResend && resendResetButton.disabled) {
-        return;
+    // =====================================
+    // SEND PASSWORD RESET EMAIL
+    // =====================================
+
+    async function sendPasswordRecovery(isResend = false) {
+
+        if (!supabaseClient) {
+            showResetMessage("Database connection unavailable.");
+            return;
+        }
+
+        const email = resetEmail.value.trim();
+
+        if (!email) {
+
+            showResetMessage("Please enter your email address.");
+
+            resetEmail.focus();
+
+            return;
+        }
+
+        const button = isResend
+            ? resendResetButton
+            : sendResetButton;
+
+        if (!button) return;
+
+        if (isResend && button.disabled) return;
+
+        setLoading(
+            button,
+            true,
+            isResend ? "Resending..." : "Sending...",
+            isResend ? "Resend Reset Link" : "Send Reset Link"
+        );
+
+        try {
+
+            const { error } =
+                await supabaseClient.auth.resetPasswordForEmail(
+                    email,
+                    {
+                        redirectTo: ROUTES.recovery
+                    }
+                );
+
+            if (error) throw error;
+
+            recoveryEmailSent = true;
+
+            if (sendResetButton) {
+                sendResetButton.hidden = true;
+                sendResetButton.disabled = true;
+            }
+
+            showResetMessage(
+                "If an account exists with this email, a password reset link has been sent. Please check your inbox and spam folder.",
+                true
+            );
+
+            startResendCountdown();
+
+        } catch (error) {
+
+            showResetMessage(
+                error.message || "Unable to send reset link."
+            );
+
+            setLoading(
+                button,
+                false,
+                "Sending...",
+                isResend ? "Resend Reset Link" : "Send Reset Link"
+            );
+        }
     }
 
-    const button = isResend ? resendResetButton : sendResetButton;
+    // =====================================
+    // ADMINISTRATOR VERIFICATION
+    // =====================================
 
-    button.disabled = true;
-    button.textContent = isResend ? "Resending..." : "Sending...";
+    function isAdministrator(user) {
 
-    try {
+        return user?.app_metadata?.role === "admin";
+    }
 
-        const { error } =
-            await supabaseClient.auth.resetPasswordForEmail(email, {
-                redirectTo: `${https://upgraded-seven.vercel.app/}/forgot-password.html`
-            });
+    // =====================================
+    // SUBSCRIPTION VERIFICATION
+    // =====================================
+
+    async function checkSubscription(user) {
+
+        const { data, error } = await supabaseClient
+            .from("subscriptions")
+            .select("id, plan, status, expires_at")
+            .eq("user_id", user.id)
+            .eq("status", "active")
+            .gt("expires_at", new Date().toISOString())
+            .order("expires_at", {
+                ascending: false
+            })
+            .limit(1)
+            .maybeSingle();
 
         if (error) throw error;
 
-        recoveryEmailSent = true;
-
-        showResetMessage(
-            "If an account exists with this email, a password reset link has been sent. Please check your inbox and spam folder.",
-            true
-        );
-
-        startResendCountdown();
-
-    } catch (error) {
-
-        showResetMessage(error.message);
-
-        button.disabled = false;
-
-        button.textContent = isResend
-            ? "Resend Reset Link"
-            : "Send Reset Link";
-    }
-}
-
-
-// =====================================
-// ADMINISTRATOR CHECK
-// =====================================
-
-function isAdministrator(user) {
-
-    if (!user || !user.app_metadata) {
-        return false;
+        return data;
     }
 
-    return user.app_metadata.role === "admin";
-}
+    // =====================================
+    // LOGIN REDIRECTION
+    // =====================================
 
+    async function redirectAfterLogin(user) {
 
-// =====================================
-// LOGIN REDIRECTION
-// =====================================
+        // ADMIN CHECK FIRST
 
-async function redirectAfterLogin(user) {
+        if (isAdministrator(user)) {
 
-    // ADMIN CHECK MUST COME FIRST
-    if (isAdministrator(user)) {
+            showMessage(
+                "Administrator login successful! Opening admin dashboard...",
+                true
+            );
 
-        showMessage(
-            "Administrator login successful! Opening admin dashboard...",
-            true
-        );
+            setTimeout(() => {
+                window.location.replace(ROUTES.admin);
+            }, 1000);
 
-        setTimeout(() => {
-            window.location.href = `${https://upgraded-seven.vercel.app/}/admin.html`;
-        }, 1000);
+            return;
+        }
 
-        return;
+        // NORMAL USER SUBSCRIPTION CHECK
+
+        const subscription = await checkSubscription(user);
+
+        if (subscription) {
+
+            showMessage(
+                "Login successful! Opening your dashboard...",
+                true
+            );
+
+            setTimeout(() => {
+                window.location.replace(ROUTES.dashboard);
+            }, 1000);
+
+        } else {
+
+            showMessage(
+                "Login successful! Please choose or renew your subscription.",
+                true
+            );
+
+            setTimeout(() => {
+                window.location.replace(ROUTES.payment);
+            }, 1000);
+        }
     }
 
-    // ORDINARY USER SUBSCRIPTION CHECK
-    const { data: subscription, error } = await supabaseClient
-        .from("subscriptions")
-        .select("id, plan, status, expires_at")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .gt("expires_at", new Date().toISOString())
-        .order("expires_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+    // =====================================
+    // USER REGISTRATION
+    // =====================================
 
-    if (error) throw error;
-
-    if (subscription) {
-
-        showMessage(
-            "Login successful! Opening your dashboard...",
-            true
-        );
-
-        setTimeout(() => {
-            window.location.href = `${https://upgraded-seven.vercel.app/}/dashboard.html`;
-        }, 1000);
-
-    } else {
-
-        showMessage(
-            "Login successful! Please choose or renew your subscription.",
-            true
-        );
-
-        setTimeout(() => {
-            window.location.href = `${https://upgraded-seven.vercel.app/}/payment.html`;
-        }, 1000);
-    }
-}
-
-
-// =====================================
-// INITIALIZE PAGE
-// =====================================
-
-if (!supabaseClient) {
-
-    showMessage(
-        "Database connection failed. Check your Supabase configuration."
-    );
-
-} else {
-
-    displayForm("login");
-
-
-    // FORGOT PASSWORD LINK
-    forgotPasswordLink.addEventListener("click", event => {
-
-        event.preventDefault();
-
-        displayForm("reset");
-    });
-
-
-    // BACK TO LOGIN
-    backToLogin.addEventListener("click", event => {
-
-        event.preventDefault();
-
-        displayForm("login");
-    });
-
-
-    // PASSWORD VISIBILITY
-    document.querySelectorAll(".show-password").forEach(button => {
-
-        button.addEventListener("click", () => {
-
-            const target = document.getElementById(button.dataset.target);
-
-            if (target) {
-
-                target.type =
-                    target.type === "password" ? "text" : "password";
-
-                button.textContent =
-                    target.type === "password" ? "Show" : "Hide";
-            }
-        });
-    });
-
-
-    // =================================
-    // REGISTRATION
-    // =================================
-
-    registerForm.addEventListener("submit", async event => {
+    async function handleRegistration(event) {
 
         event.preventDefault();
 
         const name = fullName.value.trim();
         const email = registerEmail.value.trim();
+
         const password = registerPassword.value;
         const confirmation = confirmPassword.value;
 
+        const button = registerForm.querySelector(
+            'button[type="submit"]'
+        );
+
+        if (!name) {
+
+            showMessage("Please enter your full name.");
+
+            fullName.focus();
+
+            return;
+        }
+
+        if (!email) {
+
+            showMessage("Please enter your email address.");
+
+            registerEmail.focus();
+
+            return;
+        }
+
         if (password.length < 8) {
 
-            showMessage("Password must contain at least 8 characters.");
+            showMessage(
+                "Password must contain at least 8 characters."
+            );
+
+            registerPassword.focus();
+
             return;
         }
 
         if (password !== confirmation) {
 
             showMessage("Your passwords do not match.");
+
+            confirmPassword.focus();
+
             return;
         }
 
         if (!acceptTerms.checked) {
 
-            showMessage("Please accept the Terms and Privacy Policy.");
+            showMessage(
+                "Please accept the Terms and Privacy Policy."
+            );
+
             return;
         }
 
-        const button =
-            registerForm.querySelector("button[type='submit']");
-
-        button.disabled = true;
-        button.textContent = "Creating Account...";
+        setLoading(
+            button,
+            true,
+            "Creating Account...",
+            "Create My Account"
+        );
 
         try {
 
@@ -387,6 +542,7 @@ if (!supabaseClient) {
                 await supabaseClient.auth.signUp({
 
                     email: email,
+
                     password: password,
 
                     options: {
@@ -395,7 +551,7 @@ if (!supabaseClient) {
                             full_name: name
                         },
 
-                        emailRedirectTo: `${https://upgraded-seven.vercel.app/}/auth.html`
+                        emailRedirectTo: ROUTES.auth
                     }
                 });
 
@@ -409,7 +565,9 @@ if (!supabaseClient) {
                 );
 
                 setTimeout(() => {
-                    window.location.href = `${https://upgraded-seven.vercel.app/}/payment.html`;
+
+                    window.location.replace(ROUTES.payment);
+
                 }, 1500);
 
             } else {
@@ -424,29 +582,39 @@ if (!supabaseClient) {
 
         } catch (error) {
 
-            showMessage(error.message);
+            showMessage(
+                error.message || "Registration failed."
+            );
 
         } finally {
 
-            button.disabled = false;
-            button.textContent = "Create My Account";
+            setLoading(
+                button,
+                false,
+                "Creating Account...",
+                "Create My Account"
+            );
         }
-    });
+    }
 
+    // =====================================
+    // USER LOGIN
+    // =====================================
 
-    // =================================
-    // LOGIN
-    // =================================
-
-    loginForm.addEventListener("submit", async event => {
+    async function handleLogin(event) {
 
         event.preventDefault();
 
-        const button =
-            loginForm.querySelector("button[type='submit']");
+        const button = loginForm.querySelector(
+            'button[type="submit"]'
+        );
 
-        button.disabled = true;
-        button.textContent = "Logging in...";
+        setLoading(
+            button,
+            true,
+            "Logging in...",
+            "Login to Account"
+        );
 
         try {
 
@@ -454,54 +622,184 @@ if (!supabaseClient) {
                 await supabaseClient.auth.signInWithPassword({
 
                     email: loginEmail.value.trim(),
+
                     password: loginPassword.value
                 });
 
             if (error) throw error;
 
-            // CHECK ROLE BEFORE CHECKING SUBSCRIPTION
             await redirectAfterLogin(data.user);
 
         } catch (error) {
 
-            showMessage(error.message);
+            showMessage(
+                error.message || "Login failed. Please try again."
+            );
 
         } finally {
 
-            button.disabled = false;
-            button.textContent = "Login to Account";
+            setLoading(
+                button,
+                false,
+                "Logging in...",
+                "Login to Account"
+            );
         }
-    });
+    }
 
+    // =====================================
+    // PASSWORD RECOVERY FORM
+    // =====================================
 
-    // =================================
-    // FIRST RESET LINK REQUEST
-    // =================================
-
-    resetPasswordForm.addEventListener("submit", async event => {
+    async function handleRecovery(event) {
 
         event.preventDefault();
 
         if (recoveryEmailSent) {
 
             showResetMessage(
-                "Please use the Resend Reset Link button if you need another email."
+                "Use the Resend Reset Link button to request another email."
             );
 
             return;
         }
 
         await sendPasswordRecovery(false);
-    });
+    }
 
+    // =====================================
+    // NAVIGATION EVENTS
+    // =====================================
 
-    // =================================
-    // RESEND RESET LINK
-    // =================================
+    function initializeNavigation() {
 
-    resendResetButton.addEventListener("click", async () => {
+        forgotPasswordLink?.addEventListener("click", event => {
 
-        await sendPasswordRecovery(true);
-    });
+            event.preventDefault();
 
-}
+            displayForm("reset");
+        });
+
+        backToLogin?.addEventListener("click", event => {
+
+            event.preventDefault();
+
+            displayForm("login");
+        });
+
+        resendResetButton?.addEventListener("click", () => {
+
+            sendPasswordRecovery(true);
+        });
+    }
+
+    // =====================================
+    // FORM VALIDATION
+    // =====================================
+
+    function validateElements() {
+
+        const requiredElements = [
+            loginForm,
+            registerForm,
+            resetPasswordForm,
+            authMessage,
+            resetMessage,
+            formTitle,
+            formDescription,
+            switchText,
+            switchContainer
+        ];
+
+        const missing = requiredElements.some(
+            element => !element
+        );
+
+        if (missing) {
+
+            console.error(
+                "LifeTrack: Required HTML elements are missing. Check your auth.html IDs."
+            );
+
+            return false;
+        }
+
+        return true;
+    }
+
+    // =====================================
+    // APPLICATION INITIALIZATION
+    // =====================================
+
+    function initialize() {
+
+        if (!validateElements()) return;
+
+        if (!supabaseClient) {
+
+            showMessage(
+                "Database connection failed. Check your supabase.js configuration."
+            );
+
+            console.error(
+                "LifeTrack Supabase client was not initialized."
+            );
+
+            return;
+        }
+
+        // Initial page
+
+        displayForm("login");
+
+        // Navigation
+
+        initializeNavigation();
+
+        // Password controls
+
+        initializePasswordVisibility();
+
+        // Registration
+
+        registerForm.addEventListener(
+            "submit",
+            handleRegistration
+        );
+
+        // Login
+
+        loginForm.addEventListener(
+            "submit",
+            handleLogin
+        );
+
+        // Recovery
+
+        resetPasswordForm.addEventListener(
+            "submit",
+            handleRecovery
+        );
+
+        console.log(
+            "LifeTrack authentication system initialized successfully."
+        );
+    }
+
+    // =====================================
+    // START APPLICATION
+    // =====================================
+
+    if (document.readyState === "loading") {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize
+        );
+
+    } else {
+
+        initialize();
+    }
+
+})();
