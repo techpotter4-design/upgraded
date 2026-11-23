@@ -1,308 +1,344 @@
 
 /* =========================================
    LIFETRACK PAYMENT CENTRE
-   SUPABASE PAYMENT SUBMISSION
+   SECURE SUPABASE PAYMENT SUBMISSION
 ========================================= */
 
-const supabaseClient = window.lifeTrackSupabase;
+document.addEventListener("DOMContentLoaded", () => {
+    "use strict";
 
-const plans = {
-    trial: {
-        name: "5-Day Trial",
-        price: 200,
-        duration: 5
-    },
-    standard: {
-        name: "Standard",
-        price: 800,
-        duration: 30
-    },
-    advanced: {
-        name: "Advanced",
-        price: 1500,
-        duration: 30
-    }
-};
+    const supabaseClient = window.lifeTrackSupabase;
 
-const paymentDetails = {
-    airtel: {
-        name: "Airtel Money",
-        account: "+254 714 543 685"
-    },
-    binance: {
-        name: "Binance Pay",
-        account: "1194887816"
-    }
-};
+    const plans = {
+        trial: {
+            name: "5-Day Trial",
+            price: 200,
+            duration: 5
+        },
+        standard: {
+            name: "Standard",
+            price: 800,
+            duration: 30
+        },
+        advanced: {
+            name: "Advanced",
+            price: 1500,
+            duration: 30
+        }
+    };
 
-const planInputs = document.querySelectorAll(
-    'input[name="plan"]'
-);
+    const paymentDetails = {
+        airtel: {
+            name: "Airtel Money",
+            account: "+254 714 543 685"
+        },
+        binance: {
+            name: "Binance Pay",
+            account: "1194887816"
+        }
+    };
 
-const methodInputs = document.querySelectorAll(
-    'input[name="method"]'
-);
+    const $ = (id) => document.getElementById(id);
 
-const paymentInstructions =
-    document.getElementById("paymentInstructions");
-
-const paymentForm =
-    document.getElementById("paymentForm");
-
-const paymentMessage =
-    document.getElementById("paymentMessage");
-
-const voucherForm =
-    document.getElementById("voucherForm");
-
-const voucherMessage =
-    document.getElementById("voucherMessage");
-
-const screenshot =
-    document.getElementById("paymentScreenshot");
-
-const customerName =
-    document.getElementById("customerName");
-
-const customerEmail =
-    document.getElementById("customerEmail");
-
-const transactionReference =
-    document.getElementById("transactionReference");
-
-
-// =========================================
-// UPDATE PAYMENT INSTRUCTIONS
-// =========================================
-
-function updatePaymentInstructions() {
-
-    const selectedPlan = document.querySelector(
-        'input[name="plan"]:checked'
-    )?.value;
-
-    const selectedMethod = document.querySelector(
-        'input[name="method"]:checked'
-    )?.value;
-
-    if (!selectedPlan || !selectedMethod) {
-        paymentInstructions.innerHTML =
-            "<p>Select a subscription and payment method to see instructions.</p>";
-        return;
-    }
-
-    const plan = plans[selectedPlan];
-    const method = paymentDetails[selectedMethod];
-
-    if (!plan || !method) return;
-
-    paymentInstructions.innerHTML = `
-        <h3>Payment Instructions</h3>
-        <p><strong>Subscription:</strong> ${plan.name}</p>
-        <p><strong>Amount:</strong> KSh ${plan.price.toLocaleString()}</p>
-        <p><strong>Duration:</strong> ${plan.duration} days</p>
-        <p><strong>Payment Method:</strong> ${method.name}</p>
-        <p><strong>Send Payment To:</strong></p>
-        <h3>${method.account}</h3>
-        <p>Complete payment and upload your screenshot
-        with your transaction reference below.</p>
-        <p>Your subscription will only be activated
-        after payment verification and voucher redemption.</p>
-    `;
-}
-
-planInputs.forEach(input => {
-    input.addEventListener("change", updatePaymentInstructions);
-});
-
-methodInputs.forEach(input => {
-    input.addEventListener("change", updatePaymentInstructions);
-});
-
-
-// =========================================
-// DISPLAY PAYMENT MESSAGE
-// =========================================
-
-function showPaymentMessage(message, success = false) {
-    paymentMessage.textContent = message;
-    paymentMessage.style.color = success ? "#168653" : "#c0392b";
-}
-
-function showVoucherMessage(message, success = false) {
-    voucherMessage.textContent = message;
-    voucherMessage.style.color = success ? "#168653" : "#c0392b";
-}
-
-
-// =========================================
-// SUBMIT PAYMENT TO SUPABASE
-// =========================================
-
-paymentForm.addEventListener("submit", async function(event) {
-
-    event.preventDefault();
-
-    if (!supabaseClient) {
-        showPaymentMessage("Supabase connection failed. Please refresh the page.");
-        return;
-    }
-
-    const {
-        data: { user },
-        error: authError
-    } = await supabaseClient.auth.getUser();
-
-    if (authError || !user) {
-        showPaymentMessage("Please log in to your LifeTrack account before submitting payment.");
-        return;
-    }
-
-    const selectedPlan = document.querySelector(
-        'input[name="plan"]:checked'
-    )?.value;
-
-    const selectedMethod = document.querySelector(
-        'input[name="method"]:checked'
-    )?.value;
-
-    const name = customerName.value.trim();
-    const email = customerEmail.value.trim();
-    const reference = transactionReference.value.trim();
-
-    if (!selectedPlan || !plans[selectedPlan]) {
-        showPaymentMessage("Please select a valid subscription.");
-        return;
-    }
-
-    if (!selectedMethod || !paymentDetails[selectedMethod]) {
-        showPaymentMessage("Please select a payment method.");
-        return;
-    }
-
-    if (!name || !email || !reference) {
-        showPaymentMessage("Please complete all payment details.");
-        return;
-    }
-
-    if (email.toLowerCase() !== user.email.toLowerCase()) {
-        showPaymentMessage("Please use the email address linked to your logged-in account.");
-        return;
-    }
-
-    if (!screenshot.files.length) {
-        showPaymentMessage("Please upload your payment screenshot.");
-        return;
-    }
-
-    const file = screenshot.files[0];
-
-    if (!file.type.startsWith("image/")) {
-        showPaymentMessage("Please upload a valid image.");
-        return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-        showPaymentMessage("Screenshot must be smaller than 5 MB.");
-        return;
-    }
-
-    const submitButton = paymentForm.querySelector(
-        'button[type="submit"]'
+    const planInputs = document.querySelectorAll(
+        'input[name="plan"]'
     );
 
-    if (submitButton) submitButton.disabled = true;
+    const methodInputs = document.querySelectorAll(
+        'input[name="method"]'
+    );
 
-    showPaymentMessage("Submitting your payment request...", true);
+    const paymentInstructions = $("paymentInstructions");
+    const paymentForm = $("paymentForm");
+    const paymentMessage = $("paymentMessage");
+    const voucherForm = $("voucherForm");
+    const voucherMessage = $("voucherMessage");
 
-    let uploadedPath = null;
+    const screenshot = $("paymentScreenshot");
+    const customerName = $("customerName");
+    const customerEmail = $("customerEmail");
+    const transactionReference = $("transactionReference");
 
-    try {
-
-        const extension = file.name.split(".").pop().toLowerCase();
-
-        const safeExtension = /^[a-z0-9]+$/.test(extension)
-            ? extension
-            : "jpg";
-
-        const filePath =
-            `${user.id}/${Date.now()}-${crypto.randomUUID()}.${safeExtension}`;
-
-        // Upload screenshot to private storage
-
-        const { error: uploadError } =
-            await supabaseClient.storage
-                .from("payment-screenshots")
-                .upload(filePath, file, {
-                    cacheControl: "3600",
-                    upsert: false,
-                    contentType: file.type
-                });
-
-        if (uploadError) throw uploadError;
-
-        uploadedPath = filePath;
-
-        // Save payment request
-
-        const { error: databaseError } =
-            await supabaseClient
-                .from("payment_requests")
-                .insert({
-                    user_id: user.id,
-                    customer_name: name,
-                    customer_email: user.email,
-                    plan: selectedPlan,
-                    payment_method: selectedMethod,
-                    transaction_reference: reference,
-                    screenshot_path: uploadedPath,
-                    status: "pending"
-                });
-
-        if (databaseError) throw databaseError;
-
-        paymentForm.reset();
-
-        updatePaymentInstructions();
-
-        showPaymentMessage(
-            "Your payment request was submitted successfully! Your payment is now awaiting manual verification.",
-            true
-        );
-
-    } catch (error) {
-
-        console.error("LifeTrack payment error:", error);
-
-        showPaymentMessage(
-            "Payment submission failed: " + error.message
-        );
-
-    } finally {
-
-        if (submitButton) submitButton.disabled = false;
-
-    }
-});
-
-
-// =========================================
-// VOUCHER INTERFACE
-// Verification will be connected separately
-// =========================================
-
-voucherForm.addEventListener("submit", function(event) {
-
-    event.preventDefault();
-
-    const code = document.getElementById("voucherCode").value.trim();
-
-    if (!code) {
-        showVoucherMessage("Please enter your voucher code.");
+    if (!paymentForm) {
+        console.error("LifeTrack: Payment form not found.");
         return;
     }
 
-    showVoucherMessage(
-        "Voucher verification is not connected yet. We will connect it securely in a later step."
-    );
+    // ---------------------------------
+    // MESSAGES
+    // ---------------------------------
+
+    function showPaymentMessage(message, success = false) {
+        if (!paymentMessage) return;
+
+        paymentMessage.textContent = message;
+        paymentMessage.style.color = success ? "#168653" : "#c0392b";
+    }
+
+    function showVoucherMessage(message, success = false) {
+        if (!voucherMessage) return;
+
+        voucherMessage.textContent = message;
+        voucherMessage.style.color = success ? "#168653" : "#c0392b";
+    }
+
+    // ---------------------------------
+    // PAYMENT INSTRUCTIONS
+    // ---------------------------------
+
+    function updatePaymentInstructions() {
+        if (!paymentInstructions) return;
+
+        const selectedPlan = document.querySelector(
+            'input[name="plan"]:checked'
+        )?.value;
+
+        const selectedMethod = document.querySelector(
+            'input[name="method"]:checked'
+        )?.value;
+
+        if (!selectedPlan || !selectedMethod) {
+            paymentInstructions.innerHTML =
+                "<p>Select a subscription and payment method to see instructions.</p>";
+            return;
+        }
+
+        const plan = plans[selectedPlan];
+        const method = paymentDetails[selectedMethod];
+
+        if (!plan || !method) return;
+
+        paymentInstructions.innerHTML = `
+            <h3>Payment Instructions</h3>
+            <p><strong>Subscription:</strong> ${plan.name}</p>
+            <p><strong>Amount:</strong> KSh ${plan.price.toLocaleString()}</p>
+            <p><strong>Duration:</strong> ${plan.duration} days</p>
+            <p><strong>Payment Method:</strong> ${method.name}</p>
+            <p><strong>Send Payment To:</strong></p>
+            <h3>${method.account}</h3>
+            <p>Complete payment and enter your transaction reference.
+            Upload your payment screenshot below.</p>
+            <p>Your subscription will activate only after
+            administrator verification.</p>
+        `;
+    }
+
+    planInputs.forEach((input) => {
+        input.addEventListener("change", updatePaymentInstructions);
+    });
+
+    methodInputs.forEach((input) => {
+        input.addEventListener("change", updatePaymentInstructions);
+    });
+
+    updatePaymentInstructions();
+
+    // ---------------------------------
+    // PAYMENT SUBMISSION
+    // ---------------------------------
+
+    paymentForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        if (!supabaseClient) {
+            showPaymentMessage(
+                "Supabase connection failed. Please refresh the page."
+            );
+            return;
+        }
+
+        const submitButton = paymentForm.querySelector(
+            'button[type="submit"]'
+        );
+
+        let uploadedPath = null;
+
+        if (submitButton) submitButton.disabled = true;
+
+        try {
+            showPaymentMessage("Checking your account...", true);
+
+            const {
+                data: { user },
+                error: authError
+            } = await supabaseClient.auth.getUser();
+
+            if (authError || !user) {
+                throw new Error(
+                    "Please log in before submitting payment."
+                );
+            }
+
+            const selectedPlan = document.querySelector(
+                'input[name="plan"]:checked'
+            )?.value;
+
+            const selectedMethod = document.querySelector(
+                'input[name="method"]:checked'
+            )?.value;
+
+            const name = customerName?.value.trim();
+            const email = customerEmail?.value.trim();
+            const reference = transactionReference?.value.trim();
+
+            if (!plans[selectedPlan]) {
+                throw new Error("Please select a valid subscription.");
+            }
+
+            if (!paymentDetails[selectedMethod]) {
+                throw new Error("Please select a payment method.");
+            }
+
+            if (!name || !email || !reference) {
+                throw new Error("Please complete all payment details.");
+            }
+
+            if (email.toLowerCase() !== user.email?.toLowerCase()) {
+                throw new Error(
+                    "Please use the email linked to your account."
+                );
+            }
+
+            if (!screenshot?.files?.length) {
+                throw new Error("Please upload your payment screenshot.");
+            }
+
+            const file = screenshot.files[0];
+
+            const allowedTypes = [
+                "image/jpeg",
+                "image/png",
+                "image/webp"
+            ];
+
+            if (!allowedTypes.includes(file.type)) {
+                throw new Error(
+                    "Please upload a JPG, PNG, or WebP image."
+                );
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                throw new Error(
+                    "Your screenshot must be smaller than 5 MB."
+                );
+            }
+
+            showPaymentMessage(
+                "Uploading your payment screenshot...",
+                true
+            );
+
+            const extension = file.type === "image/png"
+                ? "png"
+                : file.type === "image/webp"
+                    ? "webp"
+                    : "jpg";
+
+            const filePath =
+                `${user.id}/${crypto.randomUUID()}.${extension}`;
+
+            // Upload screenshot to private bucket
+
+            const { error: uploadError } =
+                await supabaseClient.storage
+                    .from("payment-screenshots")
+                    .upload(filePath, file, {
+                        cacheControl: "3600",
+                        upsert: false,
+                        contentType: file.type
+                    });
+
+            if (uploadError) throw uploadError;
+
+            uploadedPath = filePath;
+
+            showPaymentMessage(
+                "Saving your payment request...",
+                true
+            );
+
+            // Convert radio values into database values
+
+            const methodName = paymentDetails[selectedMethod].name;
+
+            // Secure database submission
+
+            const { data, error: submissionError } =
+                await supabaseClient.rpc(
+                    "submit_payment_request",
+                    {
+                        p_plan_key: selectedPlan,
+                        p_payment_method: methodName,
+                        p_transaction_reference: reference,
+                        p_screenshot_path: uploadedPath,
+                        p_customer_name: name
+                    }
+                );
+
+            if (submissionError) throw submissionError;
+
+            if (!data?.success) {
+                throw new Error(
+                    "The payment request could not be saved."
+                );
+            }
+
+            paymentForm.reset();
+
+            updatePaymentInstructions();
+
+            showPaymentMessage(
+                `Payment request submitted successfully! ${data.plan_name} is awaiting verification. Reference: ${reference}`,
+                true
+            );
+
+        } catch (error) {
+            console.error("LifeTrack payment error:", error);
+
+            // Remove uploaded screenshot if database submission failed
+
+            if (uploadedPath && supabaseClient) {
+                const { error: cleanupError } =
+                    await supabaseClient.storage
+                        .from("payment-screenshots")
+                        .remove([uploadedPath]);
+
+                if (cleanupError) {
+                    console.error(
+                        "Screenshot cleanup error:",
+                        cleanupError
+                    );
+                }
+            }
+
+            showPaymentMessage(
+                "Payment submission failed: " + error.message
+            );
+
+        } finally {
+            if (submitButton) submitButton.disabled = false;
+        }
+    });
+
+    // ---------------------------------
+    // VOUCHER PLACEHOLDER
+    // ---------------------------------
+
+    voucherForm?.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const code = $("voucherCode")?.value.trim();
+
+        if (!code) {
+            showVoucherMessage("Please enter your voucher code.");
+            return;
+        }
+
+        showVoucherMessage(
+            "Voucher verification is not connected yet."
+        );
+    });
+
+    console.log("LifeTrack payment centre initialized.");
 });
+       
