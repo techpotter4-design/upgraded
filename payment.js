@@ -320,25 +320,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // ---------------------------------
-    // VOUCHER PLACEHOLDER
-    // ---------------------------------
+// ---------------------------------
+// VOUCHER PLACEHOLDER
+// ---------------------------------
 
-    voucherForm?.addEventListener("submit", (event) => {
-        event.preventDefault();
+voucherForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
 
-        const code = $("voucherCode")?.value.trim();
+    const code = $("voucherCode")?.value.trim();
 
-        if (!code) {
-            showVoucherMessage("Please enter your voucher code.");
-            return;
-        }
+    if (!code) {
+        showVoucherMessage("Please enter your voucher code.");
+        return;
+    }
 
-        showVoucherMessage(
-            "Voucher verification is not connected yet."
-        );
-    });
-
-    console.log("LifeTrack payment centre initialized.");
+    showVoucherMessage(
+        "Voucher verification is not connected yet."
+    );
 });
-       
