@@ -1,784 +1,523 @@
 
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#17152d">
 
-  <title>Dashboard | LifeTrack</title>
+    <title>LifeTrack | Personal Growth Dashboard</title>
 
-  <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="css/dashboard.css">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <script>
-    const savedTheme = localStorage.getItem("lifetrack-theme");
-    document.documentElement.setAttribute(
-      "data-theme",
-      savedTheme || "light"
-    );
-  </script>
-
-  <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
 
-<div class="dashboard-layout">
+<div class="app-container">
 
-  <!-- SIDEBAR -->
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
 
-  <aside class="sidebar" id="sidebar">
-
-    <div class="sidebar-top">
-      <a href="index.html" class="brand">
-        LifeTrack.
-      </a>
-    </div>
-
-    <div class="sidebar-profile">
-
-      <div class="profile-avatar">
-        <span id="sidebarAvatar">U</span>
-      </div>
-
-      <div class="profile-information">
-        <h4 id="sidebarUserName">Loading...</h4>
-        <p id="sidebarPlan">Checking plan...</p>
-      </div>
-
-    </div>
-
-    <!-- NAVIGATION -->
-
-    <nav class="sidebar-nav">
-
-      <p class="nav-heading">MAIN MENU</p>
-
-      <button class="nav-link active" data-section="overview">
-        <i data-lucide="layout-dashboard"></i>
-        <span>Overview</span>
-      </button>
-
-      <button class="nav-link" data-section="habits">
-        <i data-lucide="list-checks"></i>
-        <span>My Habits</span>
-      </button>
-
-      <button class="nav-link" data-section="mood">
-        <i data-lucide="heart-pulse"></i>
-        <span>Mood Tracker</span>
-      </button>
-
-      <button class="nav-link" data-section="journal">
-        <i data-lucide="book-open"></i>
-        <span>My Journal</span>
-      </button>
-
-      <button class="nav-link" data-section="goals">
-        <i data-lucide="target"></i>
-        <span>My Goals</span>
-      </button>
-
-      <button class="nav-link" data-section="calendar">
-        <i data-lucide="calendar-days"></i>
-        <span>Growth Calendar</span>
-      </button>
-
-      <p class="nav-heading">PERSONAL GROWTH</p>
-
-      <button class="nav-link" data-section="insights">
-        <i data-lucide="chart-no-axes-combined"></i>
-        <span>Insights</span>
-      </button>
-
-      <button class="nav-link" data-section="coach">
-        <i data-lucide="brain"></i>
-        <span>Growth Coach</span>
-      </button>
-
-      <button class="nav-link" data-section="notifications">
-        <i data-lucide="bell"></i>
-        <span>Notifications</span>
-        <span class="nav-tag" id="sidebarNotificationDot">New</span>
-      </button>
-
-      <p class="nav-heading">ACCOUNT</p>
-
-      <button class="nav-link" data-section="subscription">
-        <i data-lucide="credit-card"></i>
-        <span>My Subscription</span>
-      </button>
-
-      <button class="nav-link" data-section="settings">
-        <i data-lucide="settings"></i>
-        <span>Settings</span>
-      </button>
-
-    </nav>
-
-    <!-- SIDEBAR FOOTER -->
-
-    <div class="sidebar-footer">
-
-      <div class="sidebar-footer-icon">
-        <i data-lucide="shield-check"></i>
-      </div>
-
-      <div class="sidebar-footer-text">
-        <strong>LifeTrack Premium</strong>
-        <p>Your growth matters.</p>
-      </div>
-
-      <button class="logout-button" id="logoutButton">
-        <i data-lucide="log-out"></i>
-        <span>Log Out</span>
-      </button>
-
-    </div>
-
-  </aside>
-
-  <!-- MAIN CONTENT -->
-
-  <main class="main-content">
-
-    <!-- TOP BAR -->
-
-    <header class="topbar">
-
-      <div class="topbar-left">
-
-        <button class="menu-toggle" id="menuToggle">
-          <i data-lucide="menu"></i>
-        </button>
-
-        <div>
-          <h2 class="topbar-title" id="pageTitle">
-            Overview
-          </h2>
-
-          <span id="currentDate"></span>
+        <div class="brand">
+            <a href="index.html">LifeTrack<span>.</span></a>
+            <button id="menuToggle" class="menu-close">
+                <i data-lucide="x"></i>
+            </button>
         </div>
 
-      </div>
-
-      <div class="topbar-actions">
-
-        <button class="theme-toggle" id="themeToggle">
-          <i data-lucide="moon" id="themeIcon"></i>
-          <span id="themeToggleLabel">Dark Mode</span>
-        </button>
-
-        <button class="notification-button" data-section="notifications">
-          <i data-lucide="bell"></i>
-          <span class="notification-count" id="notificationCount">0</span>
-        </button>
-
-        <button class="topbar-avatar" id="profileButton">
-          U
-        </button>
-
-      </div>
-
-    </header>
-
-    <!-- PAGE CONTENT -->
-
-    <div class="page-content">
-
-      <!-- OVERVIEW SECTION -->
-
-      <section class="dashboard-section active" id="overview">
-
-        <div class="welcome-banner">
-
-          <div class="welcome-content">
-
-            <p class="welcome-label">
-              YOUR PERSONAL GROWTH SPACE
-            </p>
-
-            <h1>
-              Welcome back, <span id="welcomeName">there</span>.
-            </h1>
-
-            <p class="welcome-meta">
-              Every small step you take today brings you closer
-              to the person you want to become.
-            </p>
-
-            <div class="welcome-action">
-
-              <button class="primary-button" id="dailyCheckIn">
-                <i data-lucide="check-circle"></i>
-                Daily Check-in
-              </button>
-
+        <div class="sidebar-profile">
+            <div class="profile-avatar">
+                <i data-lucide="user-round"></i>
             </div>
 
-          </div>
-
-          <div class="welcome-decoration"></div>
-
+            <div>
+                <h3 id="welcomeName">Welcome</h3>
+                <p id="sidebarPlan">Your growth journey</p>
+            </div>
         </div>
 
-        <!-- STATISTICS HEADING -->
+        <nav class="sidebar-nav">
 
-        <div class="section-heading">
+            <p class="nav-heading">WORKSPACE</p>
 
-          <div>
-            <span class="section-eyebrow">YOUR PERFORMANCE</span>
-            <h2>Daily Overview</h2>
-          </div>
+            <button class="nav-link active" data-section="overview">
+                <i data-lucide="layout-dashboard"></i>
+                <span>Overview</span>
+            </button>
 
-          <span class="date-indicator" id="overviewDate">
-            Today
-          </span>
+            <button class="nav-link" data-section="habits">
+                <i data-lucide="repeat"></i>
+                <span>My Habits</span>
+            </button>
 
-        </div>
+            <button class="nav-link" data-section="mood">
+                <i data-lucide="heart-pulse"></i>
+                <span>Mood Tracker</span>
+            </button>
 
-        <!-- STATISTICS CARDS -->
+            <button class="nav-link" data-section="journal">
+                <i data-lucide="book-open"></i>
+                <span>Personal Journal</span>
+            </button>
 
-        <div class="stats-grid">
-
-          <div class="stat-card">
-
-            <div class="stat-top">
-              <span class="stat-icon purple">
-                <i data-lucide="activity"></i>
-              </span>
-            </div>
-
-            <h3 id="dailyProgress">0%</h3>
-            <p>Daily Progress</p>
-
-          </div>
-
-          <div class="stat-card">
-
-            <div class="stat-top">
-              <span class="stat-icon blue">
-                <i data-lucide="check-check"></i>
-              </span>
-            </div>
-
-            <h3 id="habitsCompleted">0</h3>
-            <p>Habits Completed</p>
-
-          </div>
-
-          <div class="stat-card">
-
-            <div class="stat-top">
-              <span class="stat-icon orange">
-                <i data-lucide="flame"></i>
-              </span>
-            </div>
-
-            <h3 id="currentStreak">0</h3>
-            <p>Current Streak</p>
-
-          </div>
-
-          <div class="stat-card">
-
-            <div class="stat-top">
-              <span class="stat-icon green">
+            <button class="nav-link" data-section="goals">
                 <i data-lucide="target"></i>
-              </span>
+                <span>My Goals</span>
+            </button>
+
+            <button class="nav-link" data-section="calendar">
+                <i data-lucide="calendar-days"></i>
+                <span>Calendar</span>
+            </button>
+
+            <p class="nav-heading">GROWTH CENTER</p>
+
+            <button class="nav-link" data-section="insights">
+                <i data-lucide="chart-no-axes-combined"></i>
+                <span>Analytics</span>
+            </button>
+
+            <button class="nav-link" data-section="coach">
+                <i data-lucide="brain-circuit"></i>
+                <span>AI Growth Coach</span>
+            </button>
+
+            <button class="nav-link" data-section="achievements">
+                <i data-lucide="trophy"></i>
+                <span>Achievements</span>
+            </button>
+
+            <button class="nav-link" data-section="challenges">
+                <i data-lucide="zap"></i>
+                <span>Daily Challenges</span>
+            </button>
+
+            <p class="nav-heading">ACCOUNT</p>
+
+            <button class="nav-link" data-section="notifications">
+                <i data-lucide="bell"></i>
+                <span>Notifications</span>
+            </button>
+
+            <button class="nav-link" data-section="subscription">
+                <i data-lucide="crown"></i>
+                <span>My Subscription</span>
+            </button>
+
+            <button class="nav-link" data-section="settings">
+                <i data-lucide="settings"></i>
+                <span>Settings</span>
+            </button>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="sidebar-plan">
+                <span>YOUR PLAN</span>
+                <strong id="sidebarPlanName">Loading...</strong>
             </div>
 
-            <h3 id="activeGoals">0</h3>
-            <p>Active Goals</p>
+            <button id="logoutButton" class="logout-button">
+                <i data-lucide="log-out"></i>
+                Sign Out
+            </button>
+        </div>
 
-          </div>
+    </aside>
 
-    </div>
+    <!-- MAIN APPLICATION -->
+    <main class="main-area">
+
+        <header class="topbar">
+            <button id="mobileMenuToggle" class="icon-button">
+                <i data-lucide="menu"></i>
+            </button>
+
+            <div class="topbar-heading">
+                <h1 id="pageTitle">Overview</h1>
+                <p id="currentDate">Your personal growth journey</p>
+            </div>
+
+            <div class="topbar-actions">
+                <button id="themeToggle" class="icon-button">
+                    <i data-lucide="moon" id="themeIcon"></i>
+                </button>
+
+                <button class="icon-button notification-button"
+                    data-section="notifications">
+                    <i data-lucide="bell"></i>
+                    <span id="notificationCount">0</span>
+                </button>
+
+                <button id="profileButton" class="profile-button">
+                    <i data-lucide="user-round"></i>
+                </button>
+            </div>
+        </header>
+
+        <div class="page-content">
 
           
-        <!-- OVERVIEW WIDGETS -->
+<!-- OVERVIEW SECTION -->
+<section class="dashboard-section active" id="overview">
 
-        <div class="overview-grid">
+    <div class="welcome-banner">
+        <div>
+            <span class="eyebrow">YOUR PERSONAL GROWTH SPACE</span>
+            <h2>Welcome back, <span id="dashboardName">Explorer</span>.</h2>
+            <p>Every small step brings you closer to the person you want to become.</p>
+        </div>
+        <div class="welcome-icon">
+            <i data-lucide="sun"></i>
+        </div>
+    </div>
 
-          <!-- TODAY'S HABITS -->
+    <!-- DAILY MOTIVATION -->
+    <div class="motivation-card">
+        <div>
+            <span class="eyebrow">DAILY INSPIRATION</span>
+            <h3 id="dailyQuote">Small steps create remarkable change.</h3>
+            <p id="quoteAuthor">Your daily reminder</p>
+        </div>
+        <i data-lucide="sparkles"></i>
+    </div>
 
-          <div class="content-card">
+    <!-- STATISTICS -->
+    <div class="stats-grid">
 
+        <article class="stat-card">
+            <div class="stat-top">
+                <span>Habits Completed</span>
+                <i data-lucide="check-circle"></i>
+            </div>
+            <h2 id="habitsCompleted">0/0</h2>
+            <p>Today's progress</p>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-top">
+                <span>Current Streak</span>
+                <i data-lucide="flame"></i>
+            </div>
+            <h2><span id="currentStreak">0</span> days</h2>
+            <p>Keep your momentum</p>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-top">
+                <span>Active Goals</span>
+                <i data-lucide="target"></i>
+            </div>
+            <h2 id="activeGoals">0</h2>
+            <p>Goals in progress</p>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-top">
+                <span>Growth Score</span>
+                <i data-lucide="trending-up"></i>
+            </div>
+            <h2 id="growthScore">0%</h2>
+            <p>Your weekly performance</p>
+        </article>
+
+    </div>
+
+    <!-- DAILY PROGRESS -->
+    <div class="content-card daily-progress-card">
+        <div class="card-heading">
+            <div>
+                <span class="eyebrow">DAILY PERFORMANCE</span>
+                <h3>Your daily progress</h3>
+            </div>
+            <strong id="dailyProgressText">0%</strong>
+        </div>
+
+        <div class="progress-track">
+            <div class="progress-fill" id="dailyProgress"></div>
+        </div>
+
+        <p id="dailyProgressMessage">
+            Start with one small action today.
+        </p>
+    </div>
+
+    <!-- CHART AND HABITS -->
+    <div class="dashboard-grid">
+
+        <div class="content-card">
             <div class="card-heading">
-              <h3>Today's Habits</h3>
-
-              <button class="text-button" data-section="habits">
-                View All
-              </button>
+                <div>
+                    <span class="eyebrow">YOUR CONSISTENCY</span>
+                    <h3>Weekly activity</h3>
+                </div>
+                <span class="chart-period">Last 7 days</span>
             </div>
 
-            <div id="todayHabits">
-              <div class="empty-state">
-                Your daily habits will appear here.
-              </div>
+            <div class="weekly-chart" id="weeklyProgress">
+                <div class="chart-placeholder">
+                    Your weekly activity will appear here.
+                </div>
             </div>
-
-          </div>
-
-          <!-- MOOD SUMMARY -->
-
-          <div class="content-card">
-
-            <div class="card-heading">
-              <h3>Mood Summary</h3>
-
-              <button class="text-button" data-section="mood">
-                Track Mood
-              </button>
-            </div>
-
-            <div class="mood-preview" id="moodPreview">
-              <div class="empty-state">
-                Your mood history will appear here.
-              </div>
-            </div>
-
-          </div>
-
-          <!-- WEEKLY PROGRESS -->
-
-          <div class="content-card">
-
-            <div class="card-heading">
-              <h3>Weekly Progress</h3>
-            </div>
-
-            <div id="weeklyProgress">
-              <div class="empty-state">
-                Your weekly progress will appear here.
-              </div>
-            </div>
-
-          </div>
-
-          <!-- UPCOMING GOALS -->
-
-          <div class="content-card">
-
-            <div class="card-heading">
-              <h3>Upcoming Goals</h3>
-
-              <button class="text-button" data-section="goals">
-                View Goals
-              </button>
-            </div>
-
-            <div id="upcomingGoals">
-              <div class="empty-state">
-                Your upcoming goals will appear here.
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-
-        <!-- GROWTH PROMPT -->
-
-        <div class="growth-prompt">
-
-          <div class="growth-prompt-icon">
-            <i data-lucide="lightbulb"></i>
-          </div>
-
-          <div>
-            <h3>Your Daily Growth Reminder</h3>
-
-            <p>
-              Consistency matters more than perfection.
-              Keep taking small steps toward your goals.
-            </p>
-          </div>
-
-        </div>
-
-      </section>
-
-      <!-- HABITS SECTION -->
-
-      <section class="dashboard-section" id="habits">
-
-        <div class="section-page-heading">
-
-          <div>
-            <span class="section-eyebrow">BUILD BETTER ROUTINES</span>
-            <h2>My Habits</h2>
-
-            <p>
-              Create routines and track your daily consistency.
-            </p>
-          </div>
-
-          <button class="primary-button" id="addHabitButton">
-            <i data-lucide="plus"></i>
-            Add Habit
-          </button>
-
-        </div>
-
-        <div id="habitList">
-          <div class="empty-state">
-            Your habits will appear here.
-          </div>
-        </div>
-
-      </section>
-
-      <!-- MOOD SECTION -->
-
-      <section class="dashboard-section" id="mood">
-
-        <div class="section-page-heading">
-
-          <div>
-            <span class="section-eyebrow">UNDERSTAND YOUR EMOTIONS</span>
-            <h2>Mood Tracker</h2>
-
-            <p>
-              Monitor your emotions and understand your patterns.
-            </p>
-          </div>
-
-        </div>
-
-        <div id="moodHistory">
-          <div class="empty-state">
-            Your mood history will appear here.
-          </div>
-        </div>
-
-      </section>
-
-      <!-- JOURNAL SECTION -->
-
-      <section class="dashboard-section" id="journal">
-
-        <div class="section-page-heading">
-
-          <div>
-            <span class="section-eyebrow">REFLECT AND GROW</span>
-            <h2>My Journal</h2>
-
-            <p>
-              Record your thoughts, experiences and daily reflections.
-            </p>
-          </div>
-
         </div>
 
         <div class="content-card">
-
-          <div class="card-heading">
-            <h3>Today's Reflection</h3>
-          </div>
-
-          <textarea
-            id="journalEntry"
-            placeholder="Write about your day, thoughts, achievements or challenges..."
-          ></textarea>
-
-          <div class="journal-actions">
-
-            <button class="primary-button" id="saveJournal">
-              <i data-lucide="save"></i>
-              Save Entry
-            </button>
-
-          </div>
-
-        </div>
-
-        <div class="journal-history">
-
-          <div class="card-heading">
-            <h3>Previous Entries</h3>
-          </div>
-
-          <div id="journalHistory">
-            <div class="empty-state">
-              Your saved journal entries will appear here.
-            </div>
-          </div>
-
-        </div>
-
-      </section>
-
-      <!-- GOALS SECTION -->
-
-      <section class="dashboard-section" id="goals">
-
-        <div class="section-page-heading">
-
-          <div>
-            <span class="section-eyebrow">YOUR FUTURE STARTS HERE</span>
-            <h2>My Goals</h2>
-
-            <p>
-              Set meaningful goals and monitor your progress.
-            </p>
-          </div>
-
-          <button class="primary-button" id="addGoalButton">
-            <i data-lucide="plus"></i>
-            Add Goal
-          </button>
-
-        </div>
-
-        <div id="goalList">
-          <div class="empty-state">
-            Your goals will appear here.
-          </div>
-        </div>
-
-      </section>
-
-      <!-- CALENDAR SECTION -->
-
-      <section class="dashboard-section" id="calendar">
-
-        <div class="section-page-heading">
-
-          <div>
-            <span class="section-eyebrow">YOUR CONSISTENCY</span>
-            <h2>Growth Calendar</h2>
-
-            <p>
-              See your daily activity and progress over time.
-            </p>
-          </div>
-
-        </div>
-
-        <div id="growthCalendar">
-          Your growth calendar will appear here.
-        </div>
-
-              </section>
-
-        
-      <!-- INSIGHTS SECTION -->
-
-      <section class="dashboard-section" id="insights">
-
-        <div class="section-page-heading">
-          <div>
-            <span class="section-eyebrow">YOUR PERFORMANCE</span>
-            <h2>Personal Insights</h2>
-            <p>Understand your progress and discover patterns.</p>
-          </div>
-        </div>
-
-        <div class="stats-grid">
-
-          <div class="stat-card">
-            <h3 id="insightConsistency">0%</h3>
-            <p>Consistency Rate</p>
-          </div>
-
-          <div class="stat-card">
-            <h3 id="completedGoals">0</h3>
-            <p>Completed Goals</p>
-          </div>
-
-        </div>
-
-        <div id="insightsContent">
-          <div class="empty-state">
-            Your personal insights will appear here.
-          </div>
-        </div>
-
-      </section>
-
-      <!-- GROWTH COACH SECTION -->
-
-      <section class="dashboard-section" id="coach">
-
-        <div class="section-page-heading">
-          <div>
-            <span class="section-eyebrow">PERSONAL DEVELOPMENT</span>
-            <h2>Growth Coach</h2>
-            <p>Get guidance to help you stay consistent.</p>
-          </div>
-        </div>
-
-        <div id="coachContent">
-          <div class="empty-state">
-            Your growth coaching space will appear here.
-          </div>
-        </div>
-
-      </section>
-
-      <!-- NOTIFICATIONS SECTION -->
-
-      <section class="dashboard-section" id="notifications">
-
-        <div class="section-page-heading">
-          <div>
-            <span class="section-eyebrow">STAY INFORMED</span>
-            <h2>Notifications</h2>
-            <p>Keep track of important updates and reminders.</p>
-          </div>
-        </div>
-
-        <div id="notificationList">
-          <div class="empty-state">
-            You have no new notifications.
-          </div>
-        </div>
-
-      </section>
-
-      <!-- SUBSCRIPTION SECTION -->
-
-      <section class="dashboard-section" id="subscription">
-
-        <div class="section-page-heading">
-          <div>
-            <span class="section-eyebrow">YOUR MEMBERSHIP</span>
-            <h2>My Subscription</h2>
-            <p>View your current LifeTrack membership.</p>
-          </div>
-        </div>
-
-        <div class="plan-overview">
-
-          <span class="plan-badge" id="planBadge">
-            <span id="planBadgeText">Checking Plan</span>
-          </span>
-
-          <h2 id="currentPlanName">Loading...</h2>
-
-          <p id="planDescription">
-            Checking your subscription details.
-          </p>
-
-        </div>
-
-        <div id="subscriptionDetails">
-          <div class="empty-state">
-            Loading subscription information...
-          </div>
-        </div>
-
-      </section>
-
-      <!-- SETTINGS SECTION -->
-
-      <section class="dashboard-section" id="settings">
-
-        <div class="section-page-heading">
-          <div>
-            <span class="section-eyebrow">ACCOUNT PREFERENCES</span>
-            <h2>Settings</h2>
-            <p>Manage your LifeTrack dashboard preferences.</p>
-          </div>
-        </div>
-
-        <div id="settingsContent">
-
-          <div class="appearance-setting">
-
-            <div>
-              <h3>Appearance</h3>
-              <p>Switch between light and dark mode.</p>
+            <div class="card-heading">
+                <div>
+                    <span class="eyebrow">DAILY ROUTINE</span>
+                    <h3>Today's habits</h3>
+                </div>
+                <button class="text-button" data-section="habits">
+                    View all
+                </button>
             </div>
 
-            <button
-              class="settings-theme-toggle"
-              id="settingsThemeToggle"
-            >
-              Change Theme
-            </button>
-
-          </div>
-
+            <div id="todayHabits" class="habit-preview">
+                Your habits will appear here.
+            </div>
         </div>
-
-        <div class="settings-logout-card">
-
-          <h3>Sign out of LifeTrack</h3>
-
-          <p>
-            Sign out of your account on this device.
-          </p>
-
-          <button
-            class="logout-button"
-            id="settingsLogoutButton"
-          >
-            <i data-lucide="log-out"></i>
-            Log Out
-          </button>
-
-        </div>
-
-      </section>
 
     </div>
-    <!-- END PAGE CONTENT -->
 
-  </main>
-  <!-- END MAIN CONTENT -->
+    <!-- MOOD AND GOALS -->
+    <div class="dashboard-grid">
 
-  <!-- MOBILE NAVIGATION -->
+        <div class="content-card">
+            <div class="card-heading">
+                <div>
+                    <span class="eyebrow">EMOTIONAL WELLNESS</span>
+                    <h3>Mood overview</h3>
+                </div>
+                <button class="text-button" data-section="mood">
+                    Track mood
+                </button>
+            </div>
 
-  <nav class="mobile-navigation">
+            <div id="moodPreview">
+                <p>Your mood summary will appear here.</p>
+            </div>
+        </div>
 
-    <button class="active" data-section="overview">
-      <i data-lucide="layout-dashboard"></i>
-      <span>Home</span>
-    </button>
+        <div class="content-card">
+            <div class="card-heading">
+                <div>
+                    <span class="eyebrow">YOUR NEXT MILESTONE</span>
+                    <h3>Upcoming goals</h3>
+                </div>
+                <button class="text-button" data-section="goals">
+                    View goals
+                </button>
+            </div>
 
-    <button data-section="habits">
-      <i data-lucide="list-checks"></i>
-      <span>Habits</span>
-    </button>
+            <div id="upcomingGoals">
+                <p>Your upcoming goals will appear here.</p>
+            </div>
+        </div>
 
-    <button data-section="mood">
-      <i data-lucide="heart-pulse"></i>
-      <span>Mood</span>
-    </button>
+    </div>
 
-    <button data-section="goals">
-      <i data-lucide="target"></i>
-      <span>Goals</span>
-    </button>
+    <!-- DAILY ENTERTAINMENT -->
+    <div class="dashboard-grid">
 
-    <button data-section="notifications">
-      <i data-lucide="bell"></i>
-      <span>Alerts</span>
-    </button>
+        <div class="content-card daily-joke">
+            <span class="eyebrow">A LITTLE FUN</span>
+            <h3>Joke of the day</h3>
+            <p id="dailyJoke">
+                Why did the calendar feel popular? It had so many dates!
+            </p>
+            <button id="newJokeButton" class="text-button">
+                Another joke
+            </button>
+        </div>
 
-  </nav>
+        <div class="content-card">
+            <span class="eyebrow">DAILY CHECK-IN</span>
+            <h3>How are you feeling today?</h3>
+            <p>Take a moment to reflect on yourself.</p>
+            <button class="primary-button" data-section="mood">
+                Check in now
+            </button>
+        </div>
 
-</div>
+    </div>
 
-<!-- SUPABASE AND DASHBOARD SCRIPTS -->
+          </section>
+          
+<!-- HABIT TRACKING -->
+<section class="dashboard-section" id="habits">
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <div class="section-intro">
+        <span class="eyebrow">BUILD BETTER ROUTINES</span>
+        <h2>Your Habits</h2>
+        <p>Small actions, repeated consistently, create lasting change.</p>
+    </div>
 
-<script src="supabase.js"></script>
+    <div class="feature-stats">
+        <div class="mini-stat">
+            <span>Total habits</span>
+            <strong id="totalHabits">0</strong>
+        </div>
+        <div class="mini-stat">
+            <span>Completed today</span>
+            <strong id="completedHabitsToday">0</strong>
+        </div>
+        <div class="mini-stat">
+            <span>Best streak</span>
+            <strong id="bestHabitStreak">0 days</strong>
+        </div>
+    </div>
 
-<script src="dashboard.js"></script>
+    <div class="content-card">
+        <div class="card-heading">
+            <div>
+                <span class="eyebrow">YOUR DAILY ROUTINE</span>
+                <h3>Manage your habits</h3>
+            </div>
+            <button class="primary-button" id="addHabitButton">
+                + Add Habit
+            </button>
+        </div>
 
-<script>
-  if (window.lucide) {
-    window.lucide.createIcons();
-  }
-</script>
+        <div class="filter-row">
+            <button class="filter-button active" data-habit-filter="all">All</button>
+            <button class="filter-button" data-habit-filter="pending">Pending</button>
+            <button class="filter-button" data-habit-filter="completed">Completed</button>
+        </div>
 
-</body>
-</html>
+        <div id="habitList">
+            <p>Your habits will appear here.</p>
+        </div>
+    </div>
+
+    <div class="content-card">
+        <h3>Habit consistency</h3>
+        <p>Review how consistently you've followed your routines.</p>
+        <div id="habitConsistencyChart"></div>
+    </div>
+
+</section>
+
+<!-- MOOD TRACKER -->
+<section class="dashboard-section" id="mood">
+
+    <div class="section-intro">
+        <span class="eyebrow">UNDERSTAND YOUR EMOTIONS</span>
+        <h2>Mood Tracker</h2>
+        <p>Your emotions matter. Take a moment to understand how you feel.</p>
+    </div>
+
+    <div class="content-card">
+        <span class="eyebrow">DAILY EMOTIONAL CHECK-IN</span>
+        <h3>How are you feeling right now?</h3>
+
+        <div class="mood-options" id="moodOptions">
+            <button class="mood-option" data-mood="Happy">
+                <i data-lucide="smile"></i>
+                <span>Happy</span>
+            </button>
+
+            <button class="mood-option" data-mood="Calm">
+                <i data-lucide="cloud-sun"></i>
+                <span>Calm</span>
+            </button>
+
+            <button class="mood-option" data-mood="Motivated">
+                <i data-lucide="zap"></i>
+                <span>Motivated</span>
+            </button>
+
+            <button class="mood-option" data-mood="Neutral">
+                <i data-lucide="meh"></i>
+                <span>Neutral</span>
+            </button>
+
+            <button class="mood-option" data-mood="Anxious">
+                <i data-lucide="cloud"></i>
+                <span>Anxious</span>
+            </button>
+
+            <button class="mood-option" data-mood="Sad">
+                <i data-lucide="frown"></i>
+                <span>Sad</span>
+            </button>
+        </div>
+
+        <label for="moodNote">What's influencing your mood?</label>
+        <textarea id="moodNote" placeholder="Write a little about your feelings..."></textarea>
+
+        <button class="primary-button" id="saveMoodButton">
+            Save mood entry
+        </button>
+
+        <p id="moodMessage" aria-live="polite"></p>
+    </div>
+
+    <div class="content-card">
+        <div class="card-heading">
+            <h3>Mood history</h3>
+            <span class="chart-period">Recent entries</span>
+        </div>
+
+        <div id="moodHistory">
+            <p>Your mood history will appear here.</p>
+        </div>
+    </div>
+
+    <div class="content-card">
+        <h3>Mood patterns</h3>
+        <p>Discover how your emotional well-being changes over time.</p>
+        <div id="moodAnalytics"></div>
+    </div>
+
+</section>
+
+<!-- PERSONAL JOURNAL -->
+<section class="dashboard-section" id="journal">
+
+    <div class="section-intro">
+        <span class="eyebrow">YOUR PRIVATE SPACE</span>
+        <h2>Personal Journal</h2>
+        <p>Write freely, reflect on your experiences, and document your growth.</p>
+    </div>
+
+    <div class="content-card">
+        <span class="eyebrow">DAILY REFLECTION</span>
+        <h3>What's on your mind today?</h3>
+
+        <label for="journalTitle">Entry title</label>
+        <input type="text" id="journalTitle"
+            placeholder="Give today's reflection a title">
+
+        <label for="journalEntry">Your thoughts</label>
+        <textarea id="journalEntry"
+            placeholder="Start writing your thoughts here..."></textarea>
+
+        <div class="reflection-prompt">
+            <strong>Today's reflection prompt</strong>
+            <p id="reflectionPrompt">
+                What is one thing you're grateful for today?
+            </p>
+        </div>
+
+        <button class="primary-button" id="saveJournal">
+            Save journal entry
+        </button>
+
+        <p id="journalMessage" aria-live="polite"></p>
+    </div>
+
+    <div class="content-card">
+        <div class="card-heading">
+            <h3>Previous entries</h3>
+            <span id="journalEntryCount">0 entries</span>
+        </div>
+
+        <div id="journalHistory">
+            Your saved reflections will appear here.
+        </div>
+    </div>
+
+      </section>
+      
