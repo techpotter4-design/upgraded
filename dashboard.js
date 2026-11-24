@@ -875,6 +875,44 @@ async function loadDashboardPreferences() {
         dashboardPreferences
     );
                    }
+   
+// Save dashboard preferences to Supabase
+async function saveDashboardPreferences(updates = {}) {
+
+    if (!dashboardPreferences) {
+        console.warn("Dashboard preferences are not loaded yet.");
+        return;
+    }
+
+    const updatedPreferences = {
+        ...dashboardPreferences,
+        ...updates,
+        user_id: currentUser.id,
+        updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await window.lifeTrackSupabase
+        .from("dashboard_preferences")
+        .upsert(updatedPreferences, {
+            onConflict: "user_id"
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error(
+            "Could not save dashboard preferences:",
+            error
+        );
+        alert("Your dashboard settings could not be saved.");
+        return;
+    }
+
+    dashboardPreferences = data;
+
+    console.log("Dashboard preferences saved successfully.");
+}
+   
                           
 
 });
