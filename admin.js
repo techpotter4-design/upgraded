@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", async () => {
     "use strict";
 
@@ -330,9 +329,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 await processPayment(button.dataset.id, false, button);
             });
         });
-    }
-
-    // SECURE APPROVAL / REJECTION
+            }
+        // SECURE APPROVAL / REJECTION
     async function processPayment(paymentId, approve, button) {
         const payment = paymentRequests.find(
             (item) => item.id === paymentId
@@ -509,9 +507,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <small>${formatDate(customer.created_at)}</small>
             </div>
         `).join("");
-    }
-
-    // SUBSCRIPTIONS
+            }
+        // SUBSCRIPTIONS
     async function loadSubscriptions() {
         const container = $("subscriptionRecords");
 
@@ -574,18 +571,213 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // VOUCHERS
-    function initializeVouchers() {
-        const form = $("voucherGeneratorForm");
+    let vouchers = [];
 
-        form?.addEventListener("submit", (event) => {
+    async function loadVouchers() {
+        const container = $("issuedVouchers");
+        if (container) container.innerHTML = "<p>Loading vouchers...</p>";
+
+        const { data, error } = await supabase.rpc("admin_list_vouchers");
+
+        if (error) {
+            console.error("Voucher loading error:", error);
+            if (container) {
+                container.innerHTML =
+                    `<p>Could not load vouchers: ${escapeHTML(error.message)}</p>`;
+            }
+            return;
+        }
+
+        vouchers = Array.isArray(data) ? data : [];
+        setText("vouchersIssued", vouchers.length);
+        renderVouchers();
+    }
+
+    function renderVouchers() {
+        const container = $("issuedVouchers");
+        if (!container) return;
+
+        if (!vouchers.length) {
+            container.innerHTML = "<p>No vouchers have been issued yet.</p>";
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="voucher-list">
+                ${vouchers.map((voucher) => `
+                    <div class="voucher-row">
+                        <div>
+                            <strong>${escapeHTML(voucher.code)}</strong>
+                            <small>${escapeHTML(voucher.plan_name)} · ${Number(voucher.duration_days)} days</small>
+                        </div>
+                        <div>
+                            <span class="status-badge ${escapeHTML(voucher.status)}">
+                                ${escapeHTML(voucher.status)}
+                            </span>
+                            <small>Created: ${formatDate(voucher.created_at)}</small>
+                            ${voucher.expires_at
+                                ? `<small>Code expires: ${formatDate(voucher.expires_at)}</small>`
+                                : ""}
+                            ${voucher.redeemed_at
+                                ? `<small>Redeemed: ${formatDate(voucher.redeemed_at)}</small>`
+                                : ""}
+                        </div>
+                        <button type="button"
+                            class="copy-voucher"
+                            data-code="${escapeHTML(voucher.code)}">
+                            Copy code
+                        </button>
+                    </div>
+                `).join("")}
+            </div>
+        `;
+
+        container.querySelectorAll(".copy-voucher").forEach((button) => {
+            button.addEventListener("click", async () => {
+                const code = button.dataset.code || "";
+                try {
+                    await navigator.clipboard.writeText(code);
+                    notify(`Copied voucher code: ${code}`);
+                } catch (error) {
+                    console.error("Clipboard error:", error);
+                    window.prompt("Copy this voucher code:", code);
+                }
+            });
+        });
+    }
+        function initializeVouchers() {
+        const form = $("voucherGeneratorForm");
+        const message = $("voucherMessage");
+        const submitButton = $("generateVoucher");
+
+        $("refreshVouchers")?.addEventListener("click", loadVouchers);
+
+        form?.addEventListener("submit", async (event) => {
             event.preventDefault();
 
-            notify(
-                "Voucher generation is not connected yet. A secure voucher system is still required."
-            );
+            const planKey = $("voucherPlan")?.value;
+            const quantity = Number($("voucherQuantity")?.value || 1);
+            const expiryInput = $("voucherExpiry")?.value || "";
+            const expiry = expiryInput
+                ? new Date(expiryInput).toISOString()
+                : null;
+
+            if (!["trial", "standard", "advanced"].includes(planKey)) {
+                if (message) message.textContent = "Please select a subscription plan.";
+                return;
+            }
+
+            if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
+                if (message) message.textContent = "Choose a quantity from 1 to 100.";
+                return;
+            }
+
+            if (expiryInput && (!Number.isFinite(new Date(expiryInput).getTime()) ||
+                new Date(expiryInput).getTime() <= Date.now())) {
+                if (message) message.textContent = "Voucher expiry must be a future date and time.";
+                return;
+            }
+
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = "Generating...";
+            }
+
+            if (message) {
+                message.textContent = "Generating secure voucher codes...";
+            }
+
+            const { data, error } = await supabase.rpc("generate_vouchers", {
+                p_plan_key: planKey,
+                p_quantity: quantity,
+                p_expires_at: expiry
+            });
+
+            if (error) {
+                console.error("Voucher generation error:", error);
+
+                if (message) {
+                    message.textContent =
+                        `Could not generate vouchers: ${error.message}`;
+                }
+
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML =
+                        '<i data-lucide="ticket-plus"></i> Generate Vouchers';
+                    window.lucide?.createIcons();
+                }
+
+                return;
+            }
+
+            const generated = Array.isArray(data) ? data : [];
+
+            if (message) {
+                message.textContent =
+                    `Successfully generated ${generated.length} voucher${generated.length === 1 ? "" : "s"}. Copy the codes below and share them with your customers.`;
+            }
+
+            form.reset();
+
+            if ($("voucherQuantity")) {
+                $("voucherQuantity").value = "1";
+            }
+
+            await loadVouchers();
+
+            if (generated.length) {
+                const codes = generated
+                    .map((item) => item.voucher_code)
+                    .filter(Boolean);
+
+                const output = $("newVoucherCodes");
+
+                if (output) {
+                    output.hidden = false;
+
+                    output.innerHTML = `
+                        <h4>Newly generated codes</h4>
+                        <p>Copy and securely share these codes. They are redeemable once.</p>
+
+                        ${codes.map((code) => `
+                            <div class="new-voucher-code">
+                                <code>${escapeHTML(code)}</code>
+
+                                <button
+                                    type="button"
+                                    class="copy-new-voucher"
+                                    data-code="${escapeHTML(code)}">
+                                    Copy
+                                </button>
+                            </div>
+                        `).join("")}
+                    `;
+
+                    output.querySelectorAll(".copy-new-voucher").forEach((button) => {
+                        button.addEventListener("click", async () => {
+                            const code = button.dataset.code || "";
+
+                            try {
+                                await navigator.clipboard.writeText(code);
+                                notify(`Copied voucher code: ${code}`);
+                            } catch (copyError) {
+                                window.prompt("Copy this voucher code:", code);
+                            }
+                        });
+                    });
+                }
+            }
+
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerHTML =
+                    '<i data-lucide="ticket-plus"></i> Generate Vouchers';
+                window.lucide?.createIcons();
+            }
         });
 
-        setText("vouchersIssued", "Not configured");
+        loadVouchers();
     }
 
     // NOTIFICATIONS
@@ -663,4 +855,3 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     console.log("LifeTrack admin dashboard is ready.");
 });
-        
