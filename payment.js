@@ -1,52 +1,28 @@
 
 /* =========================================
    LIFETRACK PAYMENT CENTRE
-   SECURE SUPABASE PAYMENT SUBMISSION
+   PAYMENT SUBMISSION + VOUCHER REDEMPTION
 ========================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
     "use strict";
 
     const supabaseClient = window.lifeTrackSupabase;
+    const $ = (id) => document.getElementById(id);
 
     const plans = {
-        trial: {
-            name: "5-Day Trial",
-            price: 200,
-            duration: 5
-        },
-        standard: {
-            name: "Standard",
-            price: 800,
-            duration: 30
-        },
-        advanced: {
-            name: "Advanced",
-            price: 1500,
-            duration: 30
-        }
+        trial: { name: "5-Day Trial", price: 200, duration: 5 },
+        standard: { name: "Standard", price: 800, duration: 30 },
+        advanced: { name: "Advanced", price: 1500, duration: 30 }
     };
 
     const paymentDetails = {
-        airtel: {
-            name: "Airtel Money",
-            account: "+254 714 543 685"
-        },
-        binance: {
-            name: "Binance Pay",
-            account: "1194887816"
-        }
+        airtel: { name: "Airtel Money", account: "+254 714 543 685" },
+        binance: { name: "Binance Pay", account: "1194887816" }
     };
 
-    const $ = (id) => document.getElementById(id);
-
-    const planInputs = document.querySelectorAll(
-        'input[name="plan"]'
-    );
-
-    const methodInputs = document.querySelectorAll(
-        'input[name="method"]'
-    );
+    const planInputs = document.querySelectorAll('input[name="plan"]');
+    const methodInputs = document.querySelectorAll('input[name="method"]');
 
     const paymentInstructions = $("paymentInstructions");
     const paymentForm = $("paymentForm");
@@ -59,32 +35,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const customerEmail = $("customerEmail");
     const transactionReference = $("transactionReference");
 
-    if (!paymentForm) {
-        console.error("LifeTrack: Payment form not found.");
-        return;
-    }
-
-    // ---------------------------------
-    // MESSAGES
-    // ---------------------------------
-
     function showPaymentMessage(message, success = false) {
         if (!paymentMessage) return;
-
         paymentMessage.textContent = message;
         paymentMessage.style.color = success ? "#168653" : "#c0392b";
     }
 
     function showVoucherMessage(message, success = false) {
         if (!voucherMessage) return;
-
         voucherMessage.textContent = message;
         voucherMessage.style.color = success ? "#168653" : "#c0392b";
     }
 
-    // ---------------------------------
     // PAYMENT INSTRUCTIONS
-    // ---------------------------------
 
     function updatePaymentInstructions() {
         if (!paymentInstructions) return;
@@ -118,55 +81,43 @@ document.addEventListener("DOMContentLoaded", () => {
             <h3>${method.account}</h3>
             <p>Complete payment and enter your transaction reference.
             Upload your payment screenshot below.</p>
-            <p>Your subscription will activate only after
-            administrator verification.</p>
+            <p>Your subscription activates only after administrator verification.</p>
         `;
     }
 
-    planInputs.forEach((input) => {
-        input.addEventListener("change", updatePaymentInstructions);
-    });
+    planInputs.forEach(input =>
+        input.addEventListener("change", updatePaymentInstructions)
+    );
 
-    methodInputs.forEach((input) => {
-        input.addEventListener("change", updatePaymentInstructions);
-    });
+    methodInputs.forEach(input =>
+        input.addEventListener("change", updatePaymentInstructions)
+    );
 
     updatePaymentInstructions();
 
-    // ---------------------------------
     // PAYMENT SUBMISSION
-    // ---------------------------------
 
-    paymentForm.addEventListener("submit", async (event) => {
+    paymentForm?.addEventListener("submit", async (event) => {
         event.preventDefault();
 
         if (!supabaseClient) {
-            showPaymentMessage(
-                "Supabase connection failed. Please refresh the page."
-            );
+            showPaymentMessage("Supabase connection failed.");
             return;
         }
 
-        const submitButton = paymentForm.querySelector(
-            'button[type="submit"]'
-        );
-
+        const button = paymentForm.querySelector('button[type="submit"]');
         let uploadedPath = null;
 
-        if (submitButton) submitButton.disabled = true;
+        if (button) button.disabled = true;
 
         try {
             showPaymentMessage("Checking your account...", true);
 
-            const {
-                data: { user },
-                error: authError
-            } = await supabaseClient.auth.getUser();
+            const { data: { user }, error: authError } =
+                await supabaseClient.auth.getUser();
 
             if (authError || !user) {
-                throw new Error(
-                    "Please log in before submitting payment."
-                );
+                throw new Error("Please log in before submitting payment.");
             }
 
             const selectedPlan = document.querySelector(
@@ -194,9 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (email.toLowerCase() !== user.email?.toLowerCase()) {
-                throw new Error(
-                    "Please use the email linked to your account."
-                );
+                throw new Error("Please use your registered account email.");
             }
 
             if (!screenshot?.files?.length) {
@@ -205,136 +154,149 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const file = screenshot.files[0];
 
-            const allowedTypes = [
-                "image/jpeg",
-                "image/png",
-                "image/webp"
-            ];
-
-            if (!allowedTypes.includes(file.type)) {
-                throw new Error(
-                    "Please upload a JPG, PNG, or WebP image."
-                );
+            if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+                throw new Error("Upload a JPG, PNG, or WebP image.");
             }
 
             if (file.size > 5 * 1024 * 1024) {
-                throw new Error(
-                    "Your screenshot must be smaller than 5 MB."
-                );
+                throw new Error("Screenshot must be smaller than 5 MB.");
             }
 
-            showPaymentMessage(
-                "Uploading your payment screenshot...",
-                true
-            );
+            showPaymentMessage("Uploading screenshot...", true);
 
             const extension = file.type === "image/png"
                 ? "png"
-                : file.type === "image/webp"
-                    ? "webp"
-                    : "jpg";
+                : file.type === "image/webp" ? "webp" : "jpg";
 
-            const filePath =
-                `${user.id}/${crypto.randomUUID()}.${extension}`;
+            uploadedPath = `${user.id}/${crypto.randomUUID()}.${extension}`;
 
-            // Upload screenshot to private bucket
-
-            const { error: uploadError } =
-                await supabaseClient.storage
-                    .from("payment-screenshots")
-                    .upload(filePath, file, {
-                        cacheControl: "3600",
-                        upsert: false,
-                        contentType: file.type
-                    });
+            const { error: uploadError } = await supabaseClient.storage
+                .from("payment-screenshots")
+                .upload(uploadedPath, file, {
+                    cacheControl: "3600",
+                    upsert: false,
+                    contentType: file.type
+                });
 
             if (uploadError) throw uploadError;
 
-            uploadedPath = filePath;
+            showPaymentMessage("Saving payment request...", true);
 
-            showPaymentMessage(
-                "Saving your payment request...",
-                true
+            const { data, error } = await supabaseClient.rpc(
+                "submit_payment_request",
+                {
+                    p_plan_key: selectedPlan,
+                    p_payment_method: paymentDetails[selectedMethod].name,
+                    p_transaction_reference: reference,
+                    p_screenshot_path: uploadedPath,
+                    p_customer_name: name
+                }
             );
 
-            // Convert radio values into database values
-
-            const methodName = paymentDetails[selectedMethod].name;
-
-            // Secure database submission
-
-            const { data, error: submissionError } =
-                await supabaseClient.rpc(
-                    "submit_payment_request",
-                    {
-                        p_plan_key: selectedPlan,
-                        p_payment_method: methodName,
-                        p_transaction_reference: reference,
-                        p_screenshot_path: uploadedPath,
-                        p_customer_name: name
-                    }
-                );
-
-            if (submissionError) throw submissionError;
+            if (error) throw error;
 
             if (!data?.success) {
-                throw new Error(
-                    "The payment request could not be saved."
-                );
+                throw new Error("Payment request could not be saved.");
             }
 
+            uploadedPath = null;
             paymentForm.reset();
-
             updatePaymentInstructions();
 
             showPaymentMessage(
-                `Payment request submitted successfully! ${data.plan_name} is awaiting verification. Reference: ${reference}`,
+                `Payment submitted successfully! ${data.plan_name} is awaiting verification. Reference: ${reference}`,
                 true
             );
 
         } catch (error) {
-            console.error("LifeTrack payment error:", error);
-
-            // Remove uploaded screenshot if database submission failed
+            console.error("Payment error:", error);
 
             if (uploadedPath && supabaseClient) {
-                const { error: cleanupError } =
-                    await supabaseClient.storage
-                        .from("payment-screenshots")
-                        .remove([uploadedPath]);
+                const { error: cleanupError } = await supabaseClient.storage
+                    .from("payment-screenshots")
+                    .remove([uploadedPath]);
 
                 if (cleanupError) {
-                    console.error(
-                        "Screenshot cleanup error:",
-                        cleanupError
-                    );
+                    console.error("Screenshot cleanup error:", cleanupError);
                 }
             }
 
-            showPaymentMessage(
-                "Payment submission failed: " + error.message
-            );
+            showPaymentMessage("Payment failed: " + error.message);
 
         } finally {
-            if (submitButton) submitButton.disabled = false;
+            if (button) button.disabled = false;
         }
     });
 
-// ---------------------------------
-// VOUCHER PLACEHOLDER
-// ---------------------------------
+    // VOUCHER REDEMPTION
 
-voucherForm?.addEventListener("submit", (event) => {
-    event.preventDefault();
+    voucherForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-    const code = $("voucherCode")?.value.trim();
+        const button = voucherForm.querySelector('button[type="submit"]');
 
-    if (!code) {
-        showVoucherMessage("Please enter your voucher code.");
-        return;
+        if (button) button.disabled = true;
+
+        try {
+            if (!supabaseClient) {
+                throw new Error("Supabase connection failed. Refresh and try again.");
+            }
+
+            const code = $("voucherCode")?.value.trim().toUpperCase();
+
+            if (!code) {
+                throw new Error("Please enter your voucher code.");
+            }
+
+            showVoucherMessage("Verifying your voucher...", true);
+
+            const { data: { user }, error: authError } =
+                await supabaseClient.auth.getUser();
+
+            if (authError || !user) {
+                throw new Error("Please log in before redeeming a voucher.");
+            }
+
+            const { data, error } = await supabaseClient.rpc(
+                "redeem_voucher",
+                { p_code: code }
+            );
+
+            if (error) throw error;
+
+            if (!data || data.success !== true) {
+                throw new Error(
+                    data?.message || "Voucher redemption failed."
+                );
+            }
+
+            showVoucherMessage(
+                `Voucher activated successfully! Your ${data.plan_name} subscription is now active. Redirecting...`,
+                true
+            );
+
+            $("voucherCode").value = "";
+
+            setTimeout(() => {
+                window.location.href = "dashboard.html";
+            }, 1500);
+
+        } catch (error) {
+            console.error("Voucher redemption error:", error);
+            showVoucherMessage(error.message || "Voucher redemption failed.");
+
+        } finally {
+            if (button) button.disabled = false;
+        }
+    });
+
+    if (!voucherForm) {
+        console.error("LifeTrack: Voucher form not found.");
     }
 
-    showVoucherMessage(
-        "Voucher verification is not connected yet."
-    );
+    if (!supabaseClient) {
+        console.error("LifeTrack: Supabase client not initialized.");
+    }
+
 });
+       
