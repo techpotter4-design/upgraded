@@ -520,4 +520,335 @@
     </div>
 
       </section>
+            
+<!-- GOALS SECTION -->
+<section class="dashboard-section" id="goals">
+
+    <div class="section-intro">
+        <span class="eyebrow">TURN PLANS INTO RESULTS</span>
+        <h2>My Goals</h2>
+        <p>Define your ambitions, track milestones, and celebrate progress.</p>
+    </div>
+
+    <div class="feature-stats">
+        <div class="mini-stat">
+            <span>Active goals</span>
+            <strong id="goalTotal">0</strong>
+        </div>
+        <div class="mini-stat">
+            <span>Completed</span>
+            <strong id="completedGoals">0</strong>
+        </div>
+        <div class="mini-stat">
+            <span>Milestones</span>
+            <strong id="goalMilestones">0</strong>
+        </div>
+    </div>
+
+    <div class="content-card">
+        <div class="card-heading">
+            <h3>Your goals</h3>
+            <button class="primary-button" id="addGoalButton">
+                + Create Goal
+            </button>
+        </div>
+
+        <div id="goalList">
+            Your personal goals will appear here.
+        </div>
+    </div>
+
+    <div class="content-card">
+        <h3>Goal milestones</h3>
+        <p>Break bigger ambitions into achievable steps.</p>
+        <div id="goalMilestoneList"></div>
+    </div>
+
+</section>
+
+<!-- CALENDAR SECTION -->
+<section class="dashboard-section" id="calendar">
+
+    <div class="section-intro">
+        <span class="eyebrow">PLAN YOUR PROGRESS</span>
+        <h2>Growth Calendar</h2>
+        <p>Organize your habits, activities, appointments, and important dates.</p>
+    </div>
+
+    <div class="content-card">
+
+        <div class="calendar-header">
+            <button id="previousMonth" class="icon-button"
+                aria-label="Previous month">
+                <i data-lucide="chevron-left"></i>
+            </button>
+
+            <h3 id="calendarMonth">November 2026</h3>
+
+            <button id="nextMonth" class="icon-button"
+                aria-label="Next month">
+                <i data-lucide="chevron-right"></i>
+            </button>
+        </div>
+
+        <div class="calendar-weekdays">
+            <span>Sun</span>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
+        </div>
+
+        <div id="growthCalendar" class="calendar-grid"></div>
+
+        <div class="calendar-legend">
+            <span>Habit completed</span>
+            <span>Scheduled activity</span>
+            <span>Goal deadline</span>
+        </div>
+
+    </div>
+
+    <div class="content-card">
+        <h3>Schedule an activity</h3>
+
+        <label for="scheduleTitle">Activity name</label>
+        <input id="scheduleTitle" type="text"
+            placeholder="e.g. Morning exercise">
+
+        <label for="scheduleDate">Date</label>
+        <input id="scheduleDate" type="date">
+
+        <label for="scheduleTime">Time</label>
+        <input id="scheduleTime" type="time">
+
+        <label for="scheduleNotes">Additional notes</label>
+        <textarea id="scheduleNotes"
+            placeholder="Add details about this activity..."></textarea>
+
+        <button id="saveScheduleButton" class="primary-button">
+            Save schedule
+        </button>
+
+        <p id="scheduleMessage" aria-live="polite"></p>
+    </div>
+
+    <div class="content-card">
+        <h3>Upcoming activities</h3>
+        <div id="upcomingActivities">
+            Your scheduled activities will appear here.
+        </div>
+    </div>
+
+</section>
+
+<!-- ANALYTICS SECTION -->
+<section class="dashboard-section" id="insights">
+
+    <div class="section-intro">
+        <span class="eyebrow">MEASURE YOUR GROWTH</span>
+        <h2>Analytics & Reports</h2>
+        <p>Understand your patterns and see how far you've progressed.</p>
+    </div>
+
+    <div class="analytics-filters">
+        <label for="analyticsPeriod">Reporting period</label>
+        <select id="analyticsPeriod">
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+        </select>
+    </div>
+
+    <div class="stats-grid">
+        <article class="stat-card">
+            <span>Habit consistency</span>
+            <h2 id="insightConsistency">0%</h2>
+        </article>
+
+        <article class="stat-card">
+            <span>Completed goals</span>
+            <h2 id="insightGoals">0</h2>
+        </article>
+
+        <article class="stat-card">
+            <span>Journal entries</span>
+            <h2 id="insightJournal">0</h2>
+        </article>
+
+        <article class="stat-card">
+            <span>Active days</span>
+            <h2 id="insightActiveDays">0</h2>
+        </article>
+    </div>
+
+    <div class="content-card">
+        <h3>Performance trends</h3>
+        <div id="performanceChart"></div>
+    </div>
+
+    <div class="content-card">
+        <h3>Habit performance breakdown</h3>
+        <div id="habitAnalytics"></div>
+    </div>
+
+    <div class="content-card">
+        <h3>Personal growth report</h3>
+        <div id="insightsContent">
+            Your growth report will appear here.
+        </div>
+        <button id="exportReportButton" class="secondary-button">
+            Export report
+        </button>
+    </div>
+
+</section>
+            
+<!-- SUBSCRIPTION SECTION -->
+<section class="dashboard-section" id="subscription">
+
+    <div class="section-intro">
+        <span class="eyebrow">YOUR LIFETRACK MEMBERSHIP</span>
+        <h2>My Subscription</h2>
+        <p>Manage your membership and explore the features available to you.</p>
+    </div>
+
+    <div class="content-card subscription-current">
+        <span class="eyebrow">CURRENT MEMBERSHIP</span>
+        <h2 id="currentPlanName">Loading plan...</h2>
+        <span id="planBadge" class="plan-badge">
+            <span id="planBadgeText">Checking status</span>
+        </span>
+
+        <p id="planDescription">
+            Your membership details will appear here.
+        </p>
+
+        <div id="subscriptionDetails"></div>
+
+        <button id="manageSubscriptionButton" class="primary-button">
+            Manage subscription
+        </button>
+    </div>
+
+    <div class="plan-comparison">
+        <div class="content-card plan-card">
+            <span class="eyebrow">STARTER EXPERIENCE</span>
+            <h3>Trial</h3>
+            <p>Explore essential personal growth tools.</p>
+            <div class="plan-features">
+                <p>3 habits</p>
+                <p>2 goals</p>
+                <p>Basic analytics</p>
+                <p>Basic mood tracking</p>
+            </div>
+        </div>
+
+        <div class="content-card plan-card">
+            <span class="eyebrow">EVERYDAY GROWTH</span>
+            <h3>Standard</h3>
+            <p>Build stronger routines and understand your progress.</p>
+            <div class="plan-features">
+                <p>15 habits</p>
+                <p>10 goals</p>
+                <p>Detailed analytics</p>
+                <p>Limited AI Coach</p>
+            </div>
+        </div>
+
+        <div class="content-card plan-card featured-plan">
+            <span class="eyebrow">COMPLETE EXPERIENCE</span>
+            <h3>Advanced</h3>
+            <p>Access the complete LifeTrack experience.</p>
+            <div class="plan-features">
+                <p>Unlimited habits</p>
+                <p>Unlimited goals</p>
+                <p>Advanced analytics</p>
+                <p>Full AI Coach</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-card">
+        <h3>Upgrade your experience</h3>
+        <p>Unlock more tools to support your personal development.</p>
+        <a href="payment.html" class="primary-button">
+            Visit Payment Centre
+        </a>
+    </div>
+
+</section>
+
+<!-- ACCOUNT SETTINGS -->
+<section class="dashboard-section" id="settings">
+
+    <div class="section-intro">
+        <span class="eyebrow">PERSONALIZE YOUR EXPERIENCE</span>
+        <h2>Account Settings</h2>
+        <p>Manage your preferences and dashboard experience.</p>
+    </div>
+
+    <div class="content-card">
+        <h3>Appearance</h3>
+
+        <div class="setting-row">
+            <div>
+                <strong>Dark mode</strong>
+                <p>Change your dashboard appearance.</p>
+            </div>
+
+            <input type="checkbox" id="settingsThemeToggle">
+        </div>
+    </div>
+
+    <div class="content-card">
+        <h3>Personal preferences</h3>
+
+        <div id="settingsContent">
+            Your account preferences will appear here.
+        </div>
+    </div>
+
+    <div class="content-card">
+        <h3>Account security</h3>
+        <p>Protect your LifeTrack account and manage your session.</p>
+
+        <button id="settingsLogoutButton" class="danger-button">
+            Sign out of LifeTrack
+        </button>
+    </div>
+
+</section>
+            
+        </div>
+        <!-- END PAGE CONTENT -->
+
+        <footer class="dashboard-footer">
+            <p>
+                © 2026 LifeTrack. Your growth, your journey.
+            </p>
+            <span>Built for meaningful progress.</span>
+        </footer>
+
+    </main>
+    <!-- END MAIN APPLICATION -->
+
+</div>
+<!-- END APP CONTAINER -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.js"></script>
+<script src="dashboard.js"></script>
+
+<script>
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+</script>
+
+</body>
+</html>
+
       
