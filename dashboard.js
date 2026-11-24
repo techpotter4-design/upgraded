@@ -913,6 +913,9 @@ async function saveDashboardPreferences(updates = {}) {
     console.log("Dashboard preferences saved successfully.");
 }
    
-                          
+  
+// Load dashboard customization after authentication
+await loadDashboardPreferences();
+   
 
 });
