@@ -395,7 +395,172 @@ document.addEventListener("DOMContentLoaded", async function () {
     
     // NEXT SECTIONS WILL BE ADDED BELOW
 
-                                
+     
+    // =================================
+    // MOOD TRACKING
+    // =================================
+
+    let selectedMood = null;
+    let moodEntries = [];
+
+    document.querySelectorAll("[data-mood]").forEach(button => {
+        button.addEventListener("click", function () {
+            selectedMood = this.dataset.mood;
+
+            document.querySelectorAll("[data-mood]").forEach(item => {
+                item.classList.remove("selected");
+            });
+
+            this.classList.add("selected");
+        });
+    });
+
+    async function saveMood() {
+        if (!selectedMood) {
+            alert("Please select your mood first.");
+            return;
+        }
+
+        const note = $("#moodNote")?.value || "";
+
+        const { error } = await supabase
+            .from("mood_entries")
+            .insert({
+                user_id: currentUser.id,
+                mood: selectedMood,
+                note: note.trim(),
+                entry_date: localDateString()
+            });
+
+        if (error) {
+            console.error("Saving mood:", error);
+            alert("Could not save your mood.");
+            return;
+        }
+
+        setText("#moodMessage", "Your mood has been saved.");
+
+        if ($("#moodNote")) $("#moodNote").value = "";
+
+        selectedMood = null;
+
+        document.querySelectorAll("[data-mood]").forEach(button => {
+            button.classList.remove("selected");
+        });
+
+        await loadMoodHistory();
+    }
+
+    $("#saveMoodButton")?.addEventListener("click", saveMood);
+
+    async function loadMoodHistory() {
+        const { data, error } = await supabase
+            .from("mood_entries")
+            .select("*")
+            .eq("user_id", currentUser.id)
+            .order("created_at", { ascending: false })
+            .limit(30);
+
+        if (error) {
+            console.error("Loading moods:", error);
+            return;
+        }
+
+        moodEntries = data || [];
+
+        const history = $("#moodHistory");
+
+        if (history) {
+            history.innerHTML = moodEntries.length
+                ? moodEntries.map(entry => `
+                    <div class="journal-item">
+                        <strong>${escapeHTML(entry.mood)}</strong>
+                        <p>${escapeHTML(entry.note || "")}</p>
+                        <small>${escapeHTML(entry.entry_date || "")}</small>
+                    </div>
+                `).join("")
+                : '<div class="empty-state">No mood records yet.</div>';
+        }
+    }
+
+    // =================================
+    // PERSONAL JOURNAL
+    // =================================
+
+    let journalEntries = [];
+
+    async function saveJournalEntry() {
+        const title = $("#journalTitle")?.value.trim() || "";
+        const content = $("#journalEntry")?.value.trim() || "";
+
+        if (!content) {
+            alert("Please write something before saving.");
+            return;
+        }
+
+        const { error } = await supabase
+            .from("journal_entries")
+            .insert({
+                user_id: currentUser.id,
+                title: title || "My Journal",
+                content: content,
+                entry_date: localDateString()
+            });
+
+        if (error) {
+            console.error("Saving journal:", error);
+            alert("Could not save your journal entry.");
+            return;
+        }
+
+        setText("#journalMessage", "Your journal entry has been saved.");
+
+        if ($("#journalTitle")) $("#journalTitle").value = "";
+        if ($("#journalEntry")) $("#journalEntry").value = "";
+
+        await loadJournalEntries();
+    }
+
+    $("#saveJournal")?.addEventListener("click", saveJournalEntry);
+
+    async function loadJournalEntries() {
+        const { data, error } = await supabase
+            .from("journal_entries")
+            .select("*")
+            .eq("user_id", currentUser.id)
+            .order("created_at", { ascending: false })
+            .limit(50);
+
+        if (error) {
+            console.error("Loading journal:", error);
+            return;
+        }
+
+        journalEntries = data || [];
+
+        setText("#journalEntryCount", journalEntries.length);
+
+        const history = $("#journalHistory");
+
+        if (history) {
+            history.innerHTML = journalEntries.length
+                ? journalEntries.map(entry => `
+                    <div class="journal-item">
+                        <strong>${escapeHTML(entry.title)}</strong>
+                        <p>${escapeHTML(entry.content)}</p>
+                        <small>${escapeHTML(entry.entry_date || "")}</small>
+                    </div>
+                `).join("")
+                : '<div class="empty-state">Your journal is waiting for its first entry.</div>';
+        }
+    }
+
+    // LOAD MOOD AND JOURNAL DATA
+    await loadMoodHistory();
+    await loadJournalEntries();
+
+    // END MOOD AND JOURNAL
+    
     // NEXT SECTIONS WILL BE ADDED BELOW
 
             
