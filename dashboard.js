@@ -808,5 +808,73 @@ document.addEventListener("DOMContentLoaded", async function () {
         "Subscription expires:",
         currentSubscription.expires_at
     );
+// =====================================
+// LIFETRACK DASHBOARD CUSTOMIZATION
+// =====================================
+
+const dashboardPreferenceDefaults = {
+    layout_name: "rich",
+    widget_order: [
+        "daily_progress",
+        "habit_summary",
+        "mood_summary",
+        "weekly_analytics",
+        "active_goals",
+        "recent_activity"
+    ],
+    hidden_widgets: [],
+    widget_sizes: {}
+};
+
+let dashboardPreferences = null;
+
+// Load the user's dashboard preferences
+async function loadDashboardPreferences() {
+
+    const { data, error } = await window.lifeTrackSupabase
+        .from("dashboard_preferences")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+
+    if (error) {
+        console.error(
+            "Could not load dashboard preferences:",
+            error
+        );
+        return;
+    }
+
+    if (data) {
+        dashboardPreferences = data;
+    } else {
+
+        const { data: newPreferences, error: insertError } =
+            await window.lifeTrackSupabase
+                .from("dashboard_preferences")
+                .insert({
+                    user_id: currentUser.id,
+                    ...dashboardPreferenceDefaults
+                })
+                .select()
+                .single();
+
+        if (insertError) {
+            console.error(
+                "Could not create dashboard preferences:",
+                insertError
+            );
+            return;
+        }
+
+        dashboardPreferences = newPreferences;
+    }
+
+    console.log(
+        "Dashboard preferences loaded:",
+        dashboardPreferences
+    );
+                   }
+                          
 
 });
