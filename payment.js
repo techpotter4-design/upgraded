@@ -293,6 +293,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!voucherForm) {
         console.error("LifeTrack: Voucher form not found.");
     }
+   console.log("LifeTrack: Voucher form submitted.");
+
+event.preventDefault();
+
+console.log("LifeTrack: Default page refresh prevented.");
 
     if (!supabaseClient) {
         console.error("LifeTrack: Supabase client not initialized.");
