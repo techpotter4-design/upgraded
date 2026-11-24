@@ -1,12 +1,11 @@
 
 /* =========================================
    LIFETRACK PREMIUM DASHBOARD
-   Authentication + Subscription Access
-   Dashboard Interactions
+   VOUCHER-ONLY ACCESS CONTROL
+   AUTHENTICATION + DASHBOARD INTERACTIONS
 ========================================= */
 
 document.addEventListener("DOMContentLoaded", async function () {
-
     "use strict";
 
     // =====================================
@@ -23,9 +22,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         ".dashboard-section"
     );
 
-    const navLinks = document.querySelectorAll(
-        ".nav-link"
-    );
+    const navLinks = document.querySelectorAll(".nav-link");
 
     const navigationButtons = document.querySelectorAll(
         "[data-section]"
@@ -42,29 +39,26 @@ document.addEventListener("DOMContentLoaded", async function () {
     const supabaseClient = window.lifeTrackSupabase;
 
     if (!supabaseClient) {
-        console.error("LifeTrack: Supabase connection unavailable.");
+        console.error("LifeTrack: Supabase unavailable.");
 
-        alert(
-            "Unable to connect to LifeTrack. Please refresh the page."
-        );
+        alert("Unable to connect to LifeTrack. Please refresh.");
 
         return;
     }
 
     // =====================================
-    // 3. VERIFY AUTHENTICATION
+    // 3. AUTHENTICATION
     // =====================================
 
     let currentUser = null;
 
     try {
-
         const {
             data,
             error
         } = await supabaseClient.auth.getUser();
 
-        if (error || !data.user) {
+        if (error || !data?.user) {
             window.location.replace("auth.html");
             return;
         }
@@ -72,26 +66,19 @@ document.addEventListener("DOMContentLoaded", async function () {
         currentUser = data.user;
 
     } catch (error) {
-
-        console.error(
-            "LifeTrack authentication error:",
-            error
-        );
-
-        alert("Unable to verify your account. Please log in again.");
+        console.error("Authentication error:", error);
 
         window.location.replace("auth.html");
         return;
     }
 
     // =====================================
-    // 4. VERIFY PREMIUM SUBSCRIPTION
+    // 4. VOUCHER SUBSCRIPTION VERIFICATION
     // =====================================
 
     let currentSubscription = null;
 
     try {
-
         const {
             data: subscriptions,
             error
@@ -102,54 +89,53 @@ document.addEventListener("DOMContentLoaded", async function () {
                 plan_name,
                 status,
                 starts_at,
-                expires_at
+                expires_at,
+                activation_source
             `)
             .eq("user_id", currentUser.id)
             .eq("status", "active")
+            .eq("activation_source", "voucher")
             .order("expires_at", {
                 ascending: false
             });
 
         if (error) {
             console.error(
-                "LifeTrack subscription verification error:",
+                "Voucher subscription verification failed:",
                 error
             );
 
             alert(
-                "We couldn't verify your subscription. Please try again."
+                "We couldn't verify your voucher access. Please try again."
             );
 
             return;
         }
 
-        const now = new Date();
+        const now = Date.now();
 
         currentSubscription = (subscriptions || []).find(
             (subscription) => {
+                const start = subscription.starts_at
+                    ? new Date(subscription.starts_at).getTime()
+                    : 0;
 
-                const startDate = subscription.starts_at
-                    ? new Date(subscription.starts_at)
-                    : null;
+                const expiry = subscription.expires_at
+                    ? new Date(subscription.expires_at).getTime()
+                    : 0;
 
-                const expiryDate = subscription.expires_at
-                    ? new Date(subscription.expires_at)
-                    : null;
-
-                const hasStarted =
-                    !startDate || startDate <= now;
-
-                const hasNotExpired =
-                    expiryDate && expiryDate > now;
-
-                return hasStarted && hasNotExpired;
+                return (
+                    start <= now &&
+                    expiry > now &&
+                    Number.isFinite(start) &&
+                    Number.isFinite(expiry)
+                );
             }
         );
 
         if (!currentSubscription) {
-
             alert(
-                "Your LifeTrack subscription is inactive or expired. Please subscribe to continue."
+                "Dashboard access requires a valid voucher. Please redeem a voucher to continue."
             );
 
             window.location.replace("payment.html");
@@ -157,20 +143,14 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
 
         console.log(
-            "LifeTrack subscription verified:",
-            currentSubscription
+            "Voucher access verified:",
+            currentSubscription.plan_name
         );
 
     } catch (error) {
+        console.error("Subscription verification error:", error);
 
-        console.error(
-            "LifeTrack subscription check failed:",
-            error
-        );
-
-        alert(
-            "Unable to verify your subscription. Please try again."
-        );
+        alert("Unable to verify your voucher. Please try again.");
 
         return;
     }
@@ -205,17 +185,15 @@ document.addEventListener("DOMContentLoaded", async function () {
     // =====================================
 
     if (currentDate) {
-
-        currentDate.textContent =
-            new Date().toLocaleDateString(
-                "en-KE",
-                {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric"
-                }
-            );
+        currentDate.textContent = new Date().toLocaleDateString(
+            "en-KE",
+            {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric"
+            }
+        );
     }
 
     // =====================================
@@ -223,6 +201,11 @@ document.addEventListener("DOMContentLoaded", async function () {
     // =====================================
 
     function displaySubscription() {
+        const existingBanner = $("subscriptionStatusBanner");
+
+        if (existingBanner) {
+            existingBanner.remove();
+        }
 
         const banner = document.createElement("div");
 
@@ -238,22 +221,23 @@ document.addEventListener("DOMContentLoaded", async function () {
             font-size: 14px;
         `;
 
-        const planTitle = document.createElement("strong");
+        const title = document.createElement("strong");
 
-        planTitle.textContent =
+        title.textContent =
             `${currentSubscription.plan_name} Plan`;
 
-        const statusText = document.createElement("p");
+        const status = document.createElement("p");
 
-        statusText.style.margin = "7px 0";
+        status.style.margin = "7px 0";
 
-        statusText.textContent = "Subscription status: Active";
+        status.textContent =
+            "Subscription status: Active (Voucher Verified)";
 
-        const expiryText = document.createElement("p");
+        const expiry = document.createElement("p");
 
-        expiryText.style.margin = "7px 0 0";
+        expiry.style.margin = "7px 0 0";
 
-        expiryText.textContent =
+        expiry.textContent =
             "Expires: " +
             new Date(
                 currentSubscription.expires_at
@@ -263,17 +247,13 @@ document.addEventListener("DOMContentLoaded", async function () {
                 day: "numeric"
             });
 
-        banner.append(
-            planTitle,
-            statusText,
-            expiryText
-        );
+        banner.append(title, status, expiry);
 
         const main = document.querySelector("main");
 
         if (main) {
             main.prepend(banner);
-        } else if (sections.length > 0) {
+        } else if (sections.length) {
             sections[0].prepend(banner);
         }
     }
@@ -299,12 +279,11 @@ document.addEventListener("DOMContentLoaded", async function () {
     };
 
     function showSection(sectionId) {
-
         const targetSection = $(sectionId);
 
         if (!targetSection) {
             console.warn(
-                "LifeTrack: Dashboard section not found:",
+                "Dashboard section not found:",
                 sectionId
             );
 
@@ -318,7 +297,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         targetSection.classList.add("active");
 
         navLinks.forEach((link) => {
-
             link.classList.toggle(
                 "active",
                 link.dataset.section === sectionId
@@ -328,7 +306,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         document.querySelectorAll(
             ".mobile-navigation button"
         ).forEach((button) => {
-
             button.classList.toggle(
                 "active",
                 button.dataset.section === sectionId
@@ -351,9 +328,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     navigationButtons.forEach((button) => {
-
         button.addEventListener("click", function () {
-
             const sectionId = this.dataset.section;
 
             if (sectionId) {
@@ -374,12 +349,10 @@ document.addEventListener("DOMContentLoaded", async function () {
     // =====================================
 
     menuToggle?.addEventListener("click", function () {
-
         sidebar?.classList.toggle("open");
     });
 
     document.addEventListener("click", function (event) {
-
         if (
             window.innerWidth <= 768 &&
             sidebar?.classList.contains("open") &&
@@ -395,12 +368,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     // 10. DAILY CHECK-IN
     // =====================================
 
-    $("dailyCheckIn")?.addEventListener(
-        "click",
-        function () {
-            showSection("mood");
-        }
-    );
+    $("dailyCheckIn")?.addEventListener("click", function () {
+        showSection("mood");
+    });
 
     // =====================================
     // 11. NOTIFICATIONS
@@ -409,7 +379,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     document.querySelector(
         ".notification-button"
     )?.addEventListener("click", function () {
-
         showSection("notifications");
     });
 
@@ -417,82 +386,58 @@ document.addEventListener("DOMContentLoaded", async function () {
     // 12. PROFILE BUTTON
     // =====================================
 
-    $("profileButton")?.addEventListener(
-        "click",
-        function () {
-            showSection("settings");
-        }
-    );
+    $("profileButton")?.addEventListener("click", function () {
+        showSection("settings");
+    });
 
     // =====================================
     // 13. ADD HABIT
     // =====================================
 
-    $("addHabitButton")?.addEventListener(
-        "click",
-        function () {
+    $("addHabitButton")?.addEventListener("click", function () {
+        const habitName = prompt("Enter your new habit:");
 
-            const habitName = prompt(
-                "Enter your new habit:"
+        if (habitName && habitName.trim()) {
+            alert(
+                "Habit received: " +
+                habitName.trim() +
+                ". Habit database integration is our next step."
             );
-
-            if (habitName && habitName.trim()) {
-
-                alert(
-                    "Habit received: " +
-                    habitName.trim() +
-                    ". Habit database integration is our next step."
-                );
-            }
         }
-    );
+    });
 
     // =====================================
     // 14. ADD GOAL
     // =====================================
 
-    $("addGoalButton")?.addEventListener(
-        "click",
-        function () {
+    $("addGoalButton")?.addEventListener("click", function () {
+        const goalName = prompt("Enter your new goal:");
 
-            const goalName = prompt(
-                "Enter your new goal:"
+        if (goalName && goalName.trim()) {
+            alert(
+                "Goal received: " +
+                goalName.trim() +
+                ". Goal database integration is our next step."
             );
-
-            if (goalName && goalName.trim()) {
-
-                alert(
-                    "Goal received: " +
-                    goalName.trim() +
-                    ". Goal database integration is our next step."
-                );
-            }
         }
-    );
+    });
 
     // =====================================
     // 15. JOURNAL
     // =====================================
 
-    $("saveJournal")?.addEventListener(
-        "click",
-        function () {
+    $("saveJournal")?.addEventListener("click", function () {
+        const journalEntry = $("journalEntry");
 
-            const journalEntry = $("journalEntry");
-
-            if (!journalEntry?.value.trim()) {
-                alert(
-                    "Please write something before saving."
-                );
-
-                return;
-            }
-
-            alert(
-                "Your reflection has been entered. Journal database integration is our next step."
-            );
+        if (!journalEntry?.value.trim()) {
+            alert("Please write something before saving.");
+            return;
         }
-    );
+
+        alert(
+            "Your reflection has been entered. Journal database integration is our next step."
+        );
+    });
 
     // =====================================
     // 16. AI COACH PLACEHOLDER
@@ -501,7 +446,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     $("aiChatForm")?.addEventListener(
         "submit",
         function (event) {
-
             event.preventDefault();
 
             const messageInput = $("aiMessage");
@@ -546,56 +490,65 @@ document.addEventListener("DOMContentLoaded", async function () {
         cursor: pointer;
     `;
 
-    logoutButton.addEventListener(
-        "click",
-        async function () {
+    logoutButton.addEventListener("click", async function () {
+        const confirmed = confirm(
+            "Are you sure you want to sign out?"
+        );
 
-            const confirmed = confirm(
-                "Are you sure you want to sign out?"
-            );
+        if (!confirmed) return;
 
-            if (!confirmed) return;
+        logoutButton.disabled = true;
 
-            const { error } =
-                await supabaseClient.auth.signOut();
+        const { error } = await supabaseClient.auth.signOut();
 
-            if (error) {
+        if (error) {
+            console.error("Logout error:", error);
 
-                console.error(
-                    "LifeTrack logout error:",
-                    error
-                );
+            alert("Unable to sign out. Please try again.");
 
-                alert(
-                    "Unable to sign out. Please try again."
-                );
+            logoutButton.disabled = false;
 
-                return;
-            }
-
-            window.location.replace("auth.html");
+            return;
         }
-    );
+
+        window.location.replace("auth.html");
+    });
 
     sidebar?.appendChild(logoutButton);
 
     // =====================================
-    // 18. INITIALIZATION COMPLETE
+    // 18. AUTOMATIC EXPIRY CHECK
+    // =====================================
+
+    const expiryTime = new Date(
+        currentSubscription.expires_at
+    ).getTime();
+
+    const remainingTime = expiryTime - Date.now();
+
+    if (remainingTime > 0) {
+        setTimeout(() => {
+            alert(
+                "Your LifeTrack voucher subscription has expired. Please redeem a new voucher."
+            );
+
+            window.location.replace("payment.html");
+        }, Math.min(remainingTime, 2147483647));
+    }
+
+    // =====================================
+    // 19. INITIALIZATION COMPLETE
     // =====================================
 
     console.log(
-        "LifeTrack premium dashboard initialized successfully."
+        "LifeTrack dashboard initialized successfully."
     );
 
-    console.log(
-        "Authenticated customer:",
-        currentUser.email
-    );
+    console.log("Authenticated user:", currentUser.email);
 
     console.log(
-        "Active subscription:",
+        "Verified voucher plan:",
         currentSubscription.plan_name
     );
-
 });
-        
+   p
