@@ -548,6 +548,209 @@
 </section>
 <!-- END MOOD TRACKER -->
                 
+<!-- =====================================
+     LIFETRACK GROWTH JOURNAL
+====================================== -->
+
+<section class="dashboard-section" id="section-journal">
+
+    <!-- JOURNAL HERO -->
+    <div class="journal-hero">
+        <div class="journal-hero-content">
+            <span class="journal-eyebrow">YOUR PERSONAL GROWTH SPACE</span>
+
+            <h2>Your story is still being written.</h2>
+
+            <p>
+                Reflect on your journey, celebrate your progress,
+                and discover the person you're becoming.
+            </p>
+
+            <button class="primary-button" id="addJournalButton">
+                <i data-lucide="pen-line"></i>
+                Start Writing
+            </button>
+        </div>
+
+        <div class="journal-hero-art">
+            <i data-lucide="book-heart"></i>
+            <span>GROW THROUGH EVERY CHAPTER</span>
+        </div>
+    </div>
+
+    <!-- JOURNAL STATS -->
+    <div class="journal-stats">
+        <div class="journal-stat-card">
+            <i data-lucide="book-open"></i>
+            <span>Total Reflections</span>
+            <strong id="journalEntryCount">0</strong>
+        </div>
+
+        <div class="journal-stat-card">
+            <i data-lucide="calendar-check"></i>
+            <span>This Month</span>
+            <strong id="journalMonthCount">0</strong>
+        </div>
+
+        <div class="journal-stat-card">
+            <i data-lucide="flame"></i>
+            <span>Writing Streak</span>
+            <strong id="journalStreak">0 days</strong>
+        </div>
+    </div>
+
+    <!-- DAILY INSPIRATION -->
+    <div class="journal-inspiration">
+        <div class="journal-inspiration-icon">
+            <i data-lucide="sparkles"></i>
+        </div>
+
+        <div>
+            <span>TODAY'S REFLECTION PROMPT</span>
+            <h3 id="journalDailyPrompt">
+                What is one thing you're proud of yourself for today?
+            </h3>
+            <p>
+                Give yourself permission to recognize your progress.
+            </p>
+        </div>
+
+        <button type="button" id="newJournalPrompt"
+                aria-label="Show another reflection prompt">
+            <i data-lucide="refresh-cw"></i>
+        </button>
+    </div>
+
+    <!-- WRITING WORKSPACE -->
+    <div class="journal-editor-card" id="journalFormCard" hidden>
+
+        <div class="journal-editor-heading">
+            <div>
+                <span>YOUR NEXT CHAPTER</span>
+                <h3 id="journalFormTitle">Create a New Reflection</h3>
+                <p>There is no perfect way to write. Just be yourself.</p>
+            </div>
+
+            <button type="button" id="closeJournalButton"
+                    aria-label="Close editor">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <form id="journalForm">
+
+            <input type="hidden" id="journalId">
+
+            <label for="journalTitle">Give this chapter a title</label>
+
+            <input
+                type="text"
+                id="journalTitle"
+                maxlength="150"
+                placeholder="e.g. The day I chose not to give up"
+                required
+            >
+
+            <label for="journalContent">Write your story</label>
+
+            <textarea
+                id="journalContent"
+                rows="10"
+                maxlength="10000"
+                placeholder="Start wherever you are. Write what happened, how you felt, what you learned, and what you want to remember..."
+                required
+            ></textarea>
+
+            <div class="journal-writing-footer">
+                <span id="journalWordCount">0 words</span>
+                <span>Your thoughts are worth recording.</span>
+            </div>
+
+            <div class="journal-reflection-prompts">
+                <p>NEED A LITTLE INSPIRATION?</p>
+
+                <button type="button" data-journal-prompt="What made me smile today?">
+                    What made me smile?
+                </button>
+
+                <button type="button" data-journal-prompt="What challenge did I overcome today?">
+                    What did I overcome?
+                </button>
+
+                <button type="button" data-journal-prompt="What am I grateful for today?">
+                    What am I grateful for?
+                </button>
+
+                <button type="button" data-journal-prompt="What will I do better tomorrow?">
+                    How can I grow tomorrow?
+                </button>
+            </div>
+
+            <div class="journal-form-actions">
+                <button type="button" id="cancelJournalButton">
+                    Cancel
+                </button>
+
+                <button type="submit" class="primary-button"
+                        id="saveJournalButton">
+                    <i data-lucide="save"></i>
+                    Save Reflection
+                </button>
+            </div>
+
+            <p id="journalMessage" role="status"></p>
+
+        </form>
+    </div>
+
+    <!-- JOURNAL COLLECTION -->
+    <div class="journal-collection">
+
+        <div class="journal-collection-heading">
+            <div>
+                <span>YOUR PERSONAL ARCHIVE</span>
+                <h3>Moments That Matter</h3>
+                <p>Look back and see how far you've come.</p>
+            </div>
+
+            <div class="journal-search">
+                <i data-lucide="search"></i>
+                <input type="search" id="journalSearch"
+                       placeholder="Find a reflection...">
+            </div>
+        </div>
+
+        <div class="journal-filter-bar">
+            <button class="journal-filter active"
+                    data-journal-filter="all">All Entries</button>
+
+            <button class="journal-filter"
+                    data-journal-filter="recent">Recent</button>
+        </div>
+
+        <div id="journalList">
+            <p class="empty-message">
+                Your personal reflections will appear here.
+            </p>
+        </div>
+
+    </div>
+
+    <!-- JOURNAL FOOTER QUOTE -->
+    <div class="journal-footer-quote">
+        <i data-lucide="quote"></i>
+        <p>
+            Progress isn't always loud. Sometimes it's simply
+            choosing to keep going.
+        </p>
+        <span>ONE DAY AT A TIME</span>
+    </div>
+
+</section>
+
+<!-- END GROWTH JOURNAL -->
+                
+                
                 
                 
                 
