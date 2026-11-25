@@ -3290,4 +3290,173 @@ body.sidebar-collapsed .sidebar-profile {
         padding: 18px;
     }
        }
+
+/* REWARDS CENTER — COMPACT LAYOUT */
+
+.rewards-hero {
+    padding: 23px 25px;
+    margin-bottom: 17px;
+    border-radius: 17px;
+}
+
+.rewards-hero h2 {
+    font-size: 22px;
+    margin: 8px 0;
+}
+
+.rewards-hero p {
+    font-size: 13px;
+}
+
+.rewards-hero-icon {
+    width: 58px;
+    height: 58px;
+    font-size: 27px;
+}
+
+.rewards-plan-card {
+    padding: 16px;
+    margin-bottom: 17px;
+}
+
+.rewards-plan-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 19px;
+}
+
+.rewards-plan-card h3 {
+    font-size: 15px;
+}
+
+.rewards-plan-card p {
+    font-size: 12px;
+}
+
+.rewards-summary {
+    gap: 11px;
+    margin-bottom: 24px;
+}
+
+.reward-stat-card {
+    padding: 15px;
+    border-radius: 13px;
+}
+
+.reward-stat-card i {
+    font-size: 19px;
+    margin-bottom: 9px;
+}
+
+.reward-stat-card span {
+    font-size: 11px;
+}
+
+.reward-stat-card strong {
+    font-size: 21px;
+    margin-top: 5px;
+}
+
+.reward-toolbar {
+    margin-bottom: 15px;
+}
+
+.reward-toolbar h3 {
+    font-size: 18px;
+}
+
+.reward-grid {
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.reward-card {
+    padding: 17px 14px;
+    border-radius: 15px;
+}
+
+.reward-icon {
+    width: 39px;
+    height: 39px;
+    font-size: 19px;
+    margin-bottom: 13px;
+}
+
+.reward-card h3 {
+    font-size: 16px;
+}
+
+.reward-cost {
+    font-size: 15px;
+    margin: 10px 0 13px;
+}
+
+.reward-redeem-btn {
+    padding: 10px;
+    font-size: 12px;
+}
+
+.next-reward-card {
+    padding: 18px;
+    margin-bottom: 20px;
+}
+
+.next-reward-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 19px;
+}
+
+.next-reward-card h3 {
+    font-size: 16px;
+}
+
+.next-reward-card p {
+    font-size: 12px;
+}
+
+.reward-history-panel {
+    padding: 18px;
+    margin-bottom: 18px;
+}
+
+.rewards-footer {
+    padding: 17px;
+    font-size: 12px;
+}
+
+@media (max-width: 600px) {
+    .rewards-hero {
+        padding: 18px;
+    }
+
+    .rewards-hero h2 {
+        font-size: 19px;
+    }
+
+    .reward-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .reward-card {
+        padding: 14px 11px;
+    }
+
+    .reward-card h3 {
+        font-size: 14px;
+    }
+
+    .reward-cost {
+        font-size: 13px;
+    }
+
+    .reward-stat-card {
+        padding: 12px;
+    }
+
+    .reward-stat-card strong {
+        font-size: 19px;
+    }
+   }
+
    
