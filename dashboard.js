@@ -2222,5 +2222,393 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 })();
+
+/* =========================================
+   LIFETRACK INSIGHTS - PART 1
+   Supabase data and performance calculations
+========================================= */
+
+(() => {
+    "use strict";
+
+    const insights = {
+        db: null,
+        user: null,
+        logs: [],
+        moods: [],
+        journals: [],
+        goals: [],
+        charts: {}
+    };
+
+    const get = id => document.getElementById(id);
+
+    function localDateKey(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    }
+
+    function getDateRange(days) {
+        const dates = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        for (let i = days - 1; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+            dates.push(localDateKey(date));
+        }
+
+        return dates;
+    }
+
+    function updateText(id, value) {
+        const element = get(id);
+        if (element) element.textContent = value;
+    }
+
+    async function loadInsightsData() {
+        insights.db = window.LifeTrack?.db || window.lifeTrackSupabase;
+        insights.user = window.LifeTrack?.user;
+
+        if (!insights.db || !insights.user) {
+            console.error("Insights: User authentication is not ready.");
+            return;
+        }
+
+        try {
+            const [logs, moods, journals, goals] = await Promise.all([
+                insights.db.from("habit_logs")
+                    .select("id,user_id,completed_on,completed")
+                    .eq("user_id", insights.user.id),
+
+                insights.db.from("mood_entries")
+                    .select("id,mood,mood_score,entry_date")
+                    .eq("user_id", insights.user.id),
+
+                insights.db.from("journal_entries")
+                    .select("id,title,entry_date")
+                    .eq("user_id", insights.user.id),
+
+                insights.db.from("goals")
+                    .select("id,title,status,progress,target_date")
+                    .eq("user_id", insights.user.id)
+            ]);
+
+            for (const result of [logs, moods, journals, goals]) {
+                if (result.error) throw result.error;
+            }
+
+            insights.logs = logs.data || [];
+            insights.moods = moods.data || [];
+            insights.journals = journals.data || [];
+            insights.goals = goals.data || [];
+
+            renderInsights();
+
+        } catch (error) {
+            console.error("Insights data loading error:", error);
+            updateText("insightGrowthSummary",
+                "We couldn't load your growth report. Please refresh and try again.");
+        }
+    }
+
+    function getInsightsData(days) {
+        const dates = getDateRange(days);
+
+        const logs = insights.logs.filter(item =>
+            item.completed === true &&
+            dates.includes(item.completed_on)
+        );
+
+        const moods = insights.moods.filter(item =>
+            dates.includes(item.entry_date)
+        );
+
+        const journals = insights.journals.filter(item =>
+            dates.includes(item.entry_date)
+        );
+
+        const labels = dates.map(value => {
+            const [year, month, day] = value.split("-").map(Number);
+            return new Date(year, month - 1, day).toLocaleDateString(
+                "en-US",
+                { month: "short", day: "numeric" }
+            );
+        });
+
+        const habitCounts = dates.map(date =>
+            logs.filter(item => item.completed_on === date).length
+        );
+
+        const moodScores = dates.map(date => {
+            const entries = moods.filter(item =>
+                item.entry_date === date &&
+                Number(item.mood_score) > 0
+            );
+
+            if (!entries.length) return null;
+
+            const average = entries.reduce(
+                (sum, item) => sum + Number(item.mood_score), 0
+            ) / entries.length;
+
+            return Number(average.toFixed(1));
+        });
+
+        const moodCounts = dates.map(date =>
+            moods.filter(item => item.entry_date === date).length
+        );
+
+        const journalCounts = dates.map(date =>
+            journals.filter(item => item.entry_date === date).length
+        );
+
+        const activeGoals = insights.goals.filter(goal =>
+            !["completed", "cancelled"].includes(
+                String(goal.status || "").toLowerCase()
+            )
+        );
+
+        return {
+            dates,
+            labels,
+            logs,
+            moods,
+            journals,
+            activeGoals,
+            habitCounts,
+            moodScores,
+            moodCounts,
+            journalCounts
+        };
+    }
+
+    function renderInsights() {
+        const days = Number(get("insightsPeriod")?.value || 30);
+        const data = getInsightsData(days);
+
+        updateText("insightHabitCount", data.logs.length);
+        updateText("insightMoodCount", data.moods.length);
+        updateText("insightJournalCount", data.journals.length);
+        updateText("insightGoalCount", data.activeGoals.length);
+
+        renderInsightsCharts(data);
+        renderGrowthSummary(data);
+                    }
+
+    
+    /* =========================================
+       LIFETRACK INSIGHTS - PART 2
+       Charts and personal growth report
+    ========================================= */
+
+    function renderInsightsCharts(data) {
+        if (typeof Chart === "undefined") {
+            console.error("Insights: Chart.js is not available.");
+            return;
+        }
+
+        Object.values(insights.charts).forEach(chart => chart.destroy());
+        insights.charts = {};
+
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: "index"
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: "#aeb6ca",
+                        usePointStyle: true
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: "#929bb0",
+                        maxTicksLimit: 10
+                    },
+                    grid: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: "#929bb0",
+                        precision: 0
+                    },
+                    grid: { color: "#ffffff12" }
+                }
+            }
+        };
+
+        function createChart(id, config) {
+            const canvas = get(id);
+            if (!canvas) return;
+
+            insights.charts[id] = new Chart(canvas, config);
+        }
+
+        // 1. HABIT PERFORMANCE
+        createChart("insightHabitChart", {
+            type: "line",
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: "Completed habits",
+                    data: data.habitCounts,
+                    borderColor: "#a78bfa",
+                    backgroundColor: "#a78bfa25",
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 2
+                }]
+            },
+            options: commonOptions
+        });
+
+        // 2. MOOD PATTERNS
+        createChart("insightMoodChart", {
+            type: "line",
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: "Average mood score",
+                    data: data.moodScores,
+                    borderColor: "#f472b6",
+                    backgroundColor: "#f472b625",
+                    fill: true,
+                    tension: 0.35,
+                    spanGaps: false,
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: {
+                        min: 1,
+                        max: 5,
+                        ticks: {
+                            stepSize: 1,
+                            color: "#929bb0"
+                        },
+                        grid: { color: "#ffffff12" }
+                    }
+                }
+            }
+        });
+
+        // 3. DAILY ACTIVITY COMPARISON
+        createChart("insightActivityChart", {
+            type: "bar",
+            data: {
+                labels: data.labels,
+                datasets: [
+                    {
+                        label: "Completed habits",
+                        data: data.habitCounts,
+                        backgroundColor: "#a78bfa"
+                    },
+                    {
+                        label: "Mood entries",
+                        data: data.moodCounts,
+                        backgroundColor: "#f472b6"
+                    },
+                    {
+                        label: "Journal entries",
+                        data: data.journalCounts,
+                        backgroundColor: "#38bdf8"
+                    }
+                ]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    x: {
+                        ...commonOptions.scales.x,
+                        stacked: true
+                    },
+                    y: {
+                        ...commonOptions.scales.y,
+                        stacked: true
+                    }
+                }
+            }
+        });
+    }
+
+    /* PERSONAL GROWTH REPORT */
+
+    function renderGrowthSummary(data) {
+        const totalHabits = data.logs.length;
+        const totalMoods = data.moods.length;
+        const totalJournals = data.journals.length;
+
+        const moodScores = data.moods
+            .map(item => Number(item.mood_score))
+            .filter(score => Number.isFinite(score) && score >= 1 && score <= 5);
+
+        const averageMood = moodScores.length
+            ? moodScores.reduce((sum, score) => sum + score, 0) /
+              moodScores.length
+            : null;
+
+        const activeDays = new Set([
+            ...data.logs.map(item => item.completed_on),
+            ...data.moods.map(item => item.entry_date),
+            ...data.journals.map(item => item.entry_date)
+        ]).size;
+
+        let report = `During the last ${data.dates.length} days, you recorded ` +
+            `${totalHabits} completed habits, ${totalMoods} mood entries, ` +
+            `and ${totalJournals} journal entries. `;
+
+        report += `You recorded activity on ${activeDays} ` +
+            `${activeDays === 1 ? "day" : "days"}. `;
+
+        if (averageMood !== null) {
+            report += `Your average recorded mood score was ` +
+                `${averageMood.toFixed(1)} out of 5. `;
+        } else {
+            report += "You don't have enough scored mood entries for an average yet. ";
+        }
+
+        if (activeDays === 0) {
+            report = "Your report is ready. Start recording habits, moods, " +
+                "and journal entries to discover your personal growth patterns.";
+        } else if (activeDays >= 20) {
+            report += "You've been recording your journey regularly. Keep building on that progress.";
+        } else if (activeDays >= 7) {
+            report += "You're building a record of your progress. Consistency can help reveal useful patterns.";
+        } else {
+            report += "Every entry gives you another opportunity to understand your progress.";
+        }
+
+        updateText("insightGrowthSummary", report);
+    }
+
+    /* PERIOD FILTER */
+
+    get("insightsPeriod")?.addEventListener("change", renderInsights);
+
+    /* INITIALIZATION */
+
+    document.addEventListener("lifetrack:ready", loadInsightsData);
+
+    if (window.LifeTrack?.user) {
+        loadInsightsData();
+    }
+
+})();
+                             
             
                                                 
