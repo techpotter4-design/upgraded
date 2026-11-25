@@ -750,6 +750,147 @@
 
 <!-- END GROWTH JOURNAL -->
                 
+<section class="dashboard-section" id="section-goals">
+
+    <div class="goals-hero">
+        <div class="goals-hero-content">
+            <span class="goals-eyebrow">YOUR FUTURE STARTS HERE</span>
+            <h2>Turn your ambitions into achievements.</h2>
+            <p>Set meaningful goals, track your progress, and celebrate every milestone along the way.</p>
+            <button class="primary-button" id="addGoalButton">
+                <i data-lucide="plus"></i> Create a Goal
+            </button>
+        </div>
+        <div class="goals-hero-art">
+            <i data-lucide="mountain"></i>
+            <span>SET YOUR SIGHTS HIGH</span>
+        </div>
+    </div>
+
+    <div class="goals-stats">
+        <div class="goal-stat-card">
+            <i data-lucide="target"></i>
+            <span>Total Goals</span>
+            <strong id="goalTotal">0</strong>
+        </div>
+
+        <div class="goal-stat-card">
+            <i data-lucide="activity"></i>
+            <span>In Progress</span>
+            <strong id="goalActive">0</strong>
+        </div>
+
+        <div class="goal-stat-card">
+            <i data-lucide="trophy"></i>
+            <span>Completed</span>
+            <strong id="goalCompleted">0</strong>
+        </div>
+
+        <div class="goal-stat-card">
+            <i data-lucide="trending-up"></i>
+            <span>Average Progress</span>
+            <strong id="goalAverage">0%</strong>
+        </div>
+    </div>
+
+    <div class="goal-form-card" id="goalFormCard" hidden>
+        <div class="goal-form-heading">
+            <div>
+                <span>PLAN YOUR NEXT ACHIEVEMENT</span>
+                <h3 id="goalFormTitle">Create a New Goal</h3>
+                <p>Every great achievement starts with a clear decision.</p>
+            </div>
+            <button type="button" id="closeGoalButton">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <form id="goalForm">
+            <input type="hidden" id="goalId">
+
+            <label for="goalTitle">Goal title</label>
+            <input type="text" id="goalTitle"
+                maxlength="150"
+                placeholder="e.g. Learn full-stack web development"
+                required>
+
+            <label for="goalDescription">Description</label>
+            <textarea id="goalDescription" rows="4"
+                maxlength="2000"
+                placeholder="Describe what you want to achieve..."></textarea>
+
+            <div class="goal-form-grid">
+                <div>
+                    <label for="goalDeadline">Target date</label>
+                    <input type="date" id="goalDeadline">
+                </div>
+
+                <div>
+                    <label for="goalPriority">Priority</label>
+                    <select id="goalPriority">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="goalProgressField" hidden>
+                <label for="goalProgressInput">Progress (%)</label>
+                <input type="number" id="goalProgressInput"
+                    min="0" max="100" value="0">
+            </div>
+
+            <div class="goal-form-actions">
+                <button type="button" id="cancelGoalButton">Cancel</button>
+                <button type="submit" class="primary-button"
+                    id="saveGoalButton">
+                    <i data-lucide="save"></i> Save Goal
+                </button>
+            </div>
+
+            <p id="goalMessage" role="status"></p>
+        </form>
+    </div>
+
+    <div class="goals-collection">
+        <div class="goals-collection-heading">
+            <div>
+                <span>YOUR PERSONAL MILESTONES</span>
+                <h3>Goals That Move You Forward</h3>
+                <p>Keep your ambitions visible and your progress measurable.</p>
+            </div>
+
+            <div class="goal-search">
+                <i data-lucide="search"></i>
+                <input type="search" id="goalSearch"
+                    placeholder="Search your goals...">
+            </div>
+        </div>
+
+        <div class="goal-filter-bar">
+            <button class="goal-filter active"
+                data-goal-filter="all">All Goals</button>
+            <button class="goal-filter"
+                data-goal-filter="active">In Progress</button>
+            <button class="goal-filter"
+                data-goal-filter="completed">Completed</button>
+        </div>
+
+        <div id="goalList">
+            <p class="empty-message">Your goals will appear here.</p>
+        </div>
+    </div>
+
+    <div class="goals-footer-quote">
+        <i data-lucide="quote"></i>
+        <p>Small steps every day lead to extraordinary destinations.</p>
+        <span>YOUR JOURNEY. YOUR PROGRESS.</span>
+    </div>
+
+            </section>
+                
+                
                 
                 
                 
