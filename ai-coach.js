@@ -415,4 +415,368 @@ document.addEventListener("DOMContentLoaded", () => {
 
         return data.answer.trim();
     }
-       
+
+   
+    // ======================================
+    // CHAT SENDING
+    // ======================================
+
+    async function sendMessage(message) {
+        const chat = getActiveChat();
+
+        if (!chat || sending || !message.trim()) return;
+
+        const userMessage = message.trim();
+
+        if (userMessage.length > 2000) {
+            alert("Please keep your message under 2,000 characters.");
+            return;
+        }
+
+        sending = true;
+
+        if (elements.sendButton) {
+            elements.sendButton.disabled = true;
+        }
+
+        if (elements.input) {
+            elements.input.disabled = true;
+        }
+
+        hideSuggestions();
+
+        addMessageToChat(
+            chat.id,
+            "user",
+            userMessage
+        );
+
+        if (elements.typing) {
+            elements.typing.hidden = false;
+        }
+
+        scrollToBottom();
+
+        try {
+            const answer = await requestAIResponse(chat.id);
+
+            addMessageToChat(
+                chat.id,
+                "assistant",
+                answer
+            );
+
+        } catch (error) {
+            console.error("LifeTrack AI Coach:", error);
+
+            addMessageToChat(
+                chat.id,
+                "assistant",
+                error.message ||
+                "Something went wrong. Please try again."
+            );
+
+        } finally {
+            sending = false;
+
+            if (elements.sendButton) {
+                elements.sendButton.disabled = false;
+            }
+
+            if (elements.input) {
+                elements.input.disabled = false;
+                elements.input.focus();
+            }
+
+            if (elements.typing) {
+                elements.typing.hidden = true;
+            }
+        }
+    }
+
+    // ======================================
+    // CHAT FORM
+    // ======================================
+
+    if (elements.form) {
+        elements.form.addEventListener("submit", event => {
+            event.preventDefault();
+
+            if (!elements.input) return;
+
+            const message = elements.input.value.trim();
+
+            if (!message) return;
+
+            elements.input.value = "";
+            elements.input.style.height = "auto";
+
+            sendMessage(message);
+        });
+    }
+
+    // ======================================
+    // SUGGESTION BUTTONS
+    // ======================================
+
+    if (elements.suggestions) {
+        elements.suggestions.addEventListener("click", event => {
+            const button = event.target.closest(
+                "[data-prompt], button"
+            );
+
+            if (!button) return;
+
+            const prompt =
+                button.dataset.prompt ||
+                button.textContent.trim();
+
+            if (prompt) {
+                if (!getActiveChat()) {
+                    createNewConversation();
+                }
+
+                if (elements.input) {
+                    elements.input.value = "";
+                }
+
+                sendMessage(prompt);
+            }
+        });
+    }
+
+    // ======================================
+    // NEW CONVERSATION
+    // ======================================
+
+    if (elements.newChatButton) {
+        elements.newChatButton.addEventListener(
+            "click",
+            () => {
+                if (sending) return;
+                createNewConversation();
+            }
+        );
+    }
+
+    // ======================================
+    // SIDEBAR
+    // ======================================
+
+    function closeSidebar() {
+        if (elements.sidebar) {
+            elements.sidebar.classList.remove("active");
+        }
+
+        if (elements.overlay) {
+            elements.overlay.classList.remove("active");
+        }
+
+        document.body.classList.remove("sidebar-open");
+    }
+
+    function openSidebar() {
+        if (elements.sidebar) {
+            elements.sidebar.classList.add("active");
+        }
+
+        if (elements.overlay) {
+            elements.overlay.classList.add("active");
+        }
+
+        document.body.classList.add("sidebar-open");
+    }
+
+    if (elements.menuButton) {
+        elements.menuButton.addEventListener(
+            "click",
+            openSidebar
+        );
+    }
+
+    if (elements.closeSidebar) {
+        elements.closeSidebar.addEventListener(
+            "click",
+            closeSidebar
+        );
+    }
+
+    if (elements.overlay) {
+        elements.overlay.addEventListener(
+            "click",
+            closeSidebar
+        );
+    }
+
+    // ======================================
+    // CLEAR CURRENT CONVERSATION
+    // ======================================
+
+    if (elements.clearButton) {
+        elements.clearButton.addEventListener("click", () => {
+            if (sending) return;
+
+            const chat = getActiveChat();
+
+            if (!chat) return;
+
+            const confirmed = confirm(
+                "Clear this conversation? This cannot be undone."
+            );
+
+            if (!confirmed) return;
+
+            chat.messages = [];
+            chat.title = "New conversation";
+            chat.showSuggestions = true;
+            chat.updatedAt = Date.now();
+
+            saveChats();
+            renderHistory();
+            renderMessages();
+            updateSuggestions();
+        });
+    }
+
+    // ======================================
+    // THEME
+    // ======================================
+
+    function applyTheme(theme) {
+        const selectedTheme =
+            theme === "light" ? "light" : "dark";
+
+        document.documentElement.setAttribute(
+            "data-theme",
+            selectedTheme
+        );
+
+        localStorage.setItem(
+            THEME_STORAGE,
+            selectedTheme
+        );
+    }
+
+    if (elements.themeButton) {
+        elements.themeButton.addEventListener("click", () => {
+            const currentTheme =
+                document.documentElement.getAttribute(
+                    "data-theme"
+                ) || "dark";
+
+            applyTheme(
+                currentTheme === "dark" ? "light" : "dark"
+            );
+        });
+    }
+
+    // ======================================
+    // MODE
+    // ======================================
+
+    function restoreMode() {
+        const chat = getActiveChat();
+
+        if (!chat) return;
+
+        const modeButtons = document.querySelectorAll(
+            "[data-coach-mode]"
+        );
+
+        modeButtons.forEach(button => {
+            button.classList.toggle(
+                "active",
+                button.dataset.coachMode === chat.mode
+            );
+        });
+    }
+
+    document.addEventListener("click", event => {
+        const button = event.target.closest(
+            "[data-coach-mode]"
+        );
+
+        if (!button) return;
+
+        const chat = getActiveChat();
+
+        if (!chat || sending) return;
+
+        const selectedMode = button.dataset.coachMode;
+
+        const allowedModes = [
+            "general",
+            "habits",
+            "mood",
+            "goals"
+        ];
+
+        if (!allowedModes.includes(selectedMode)) return;
+
+        chat.mode = selectedMode;
+
+        saveChats();
+        restoreMode();
+    });
+
+    // ======================================
+    // INPUT BEHAVIOR
+    // ======================================
+
+    if (elements.input) {
+        elements.input.addEventListener("input", () => {
+            elements.input.style.height = "auto";
+
+            elements.input.style.height =
+                Math.min(elements.input.scrollHeight, 140) + "px";
+        });
+
+        elements.input.addEventListener("keydown", event => {
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey &&
+                !event.isComposing
+            ) {
+                event.preventDefault();
+
+                if (elements.form) {
+                    elements.form.requestSubmit();
+                }
+            }
+        });
+    }
+
+    // ======================================
+    // INITIALIZATION
+    // ======================================
+
+    function initializeCoach() {
+        loadChats();
+
+        if (chats.length === 0) {
+            createNewConversation();
+        } else {
+            activeChatId = chats[0].id;
+
+            renderHistory();
+            renderMessages();
+            updateSuggestions();
+            restoreMode();
+        }
+
+        const savedTheme =
+            localStorage.getItem(THEME_STORAGE) || "dark";
+
+        applyTheme(savedTheme);
+
+        if (elements.typing) {
+            elements.typing.hidden = true;
+        }
+
+        console.log("LifeTrack AI Coach V3 initialized.");
+    }
+
+    initializeCoach();
+
+});
+           
