@@ -1064,6 +1064,151 @@
 
 </section>
                 
+<section class="dashboard-section" id="section-insights">
+
+    <!-- INSIGHTS HERO -->
+    <div class="insights-hero">
+        <div class="insights-hero-content">
+            <span class="insights-eyebrow">YOUR PERSONAL GROWTH CENTER</span>
+            <h2>Understand your progress.</h2>
+            <p>
+                Discover your habits, emotional patterns, consistency,
+                and the small improvements that shape your future.
+            </p>
+        </div>
+        <div class="insights-hero-icon">
+            <i data-lucide="chart-no-axes-combined"></i>
+        </div>
+    </div>
+
+    <!-- INSIGHTS FILTER -->
+    <div class="insights-toolbar">
+        <div>
+            <span>PERFORMANCE OVERVIEW</span>
+            <h3>Your Growth Report</h3>
+        </div>
+
+        <select id="insightsPeriod">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+        </select>
+    </div>
+
+    <!-- KEY PERFORMANCE INDICATORS -->
+    <div class="insights-stats">
+
+        <div class="insight-stat-card">
+            <div class="insight-stat-icon purple">
+                <i data-lucide="target"></i>
+            </div>
+            <span>Habit Completions</span>
+            <strong id="insightHabitCount">0</strong>
+            <small>Completed habit records</small>
+        </div>
+
+        <div class="insight-stat-card">
+            <div class="insight-stat-icon pink">
+                <i data-lucide="heart"></i>
+            </div>
+            <span>Mood Entries</span>
+            <strong id="insightMoodCount">0</strong>
+            <small>Emotional check-ins</small>
+        </div>
+
+        <div class="insight-stat-card">
+            <div class="insight-stat-icon blue">
+                <i data-lucide="book-open"></i>
+            </div>
+            <span>Journal Entries</span>
+            <strong id="insightJournalCount">0</strong>
+            <small>Personal reflections</small>
+        </div>
+
+        <div class="insight-stat-card">
+            <div class="insight-stat-icon green">
+                <i data-lucide="flag"></i>
+            </div>
+            <span>Active Goals</span>
+            <strong id="insightGoalCount">0</strong>
+            <small>Goals in progress</small>
+        </div>
+
+    </div>
+
+    <!-- HABIT PERFORMANCE -->
+    <div class="insights-panel">
+        <div class="insights-panel-heading">
+            <div>
+                <span>CONSISTENCY ANALYSIS</span>
+                <h3>Habit Performance</h3>
+                <p>See how consistently you complete your habits.</p>
+            </div>
+        </div>
+
+        <div class="insights-chart-container">
+            <canvas id="insightHabitChart"></canvas>
+        </div>
+    </div>
+
+    <!-- MOOD ANALYSIS -->
+    <div class="insights-panel">
+        <div class="insights-panel-heading">
+            <div>
+                <span>EMOTIONAL WELLNESS</span>
+                <h3>Your Mood Patterns</h3>
+                <p>Explore the mood scores you've recorded over time.</p>
+            </div>
+        </div>
+
+        <div class="insights-chart-container">
+            <canvas id="insightMoodChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ACTIVITY COMPARISON -->
+    <div class="insights-panel">
+        <div class="insights-panel-heading">
+            <div>
+                <span>DAILY ENGAGEMENT</span>
+                <h3>Your Activity Breakdown</h3>
+                <p>Compare your recorded habits, moods, and journal entries.</p>
+            </div>
+        </div>
+
+        <div class="insights-chart-container">
+            <canvas id="insightActivityChart"></canvas>
+        </div>
+    </div>
+
+    <!-- PERSONAL GROWTH SUMMARY -->
+    <div class="insights-report">
+        <div class="insights-report-icon">
+            <i data-lucide="sparkles"></i>
+        </div>
+
+        <div>
+            <span>YOUR PERSONAL REPORT</span>
+            <h3>Your Growth Summary</h3>
+            <p id="insightGrowthSummary">
+                Your personal growth report will appear here once your
+                records have been analyzed.
+            </p>
+        </div>
+    </div>
+
+    <!-- INSIGHTS FOOTER -->
+    <div class="insights-footer">
+        <i data-lucide="lightbulb"></i>
+        <p>
+            Progress isn't about being perfect.
+            It's about understanding yourself and continuing to improve.
+        </p>
+    </div>
+
+                                                  </section>
+                
+                
                 
                 
                 
