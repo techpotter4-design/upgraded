@@ -890,6 +890,181 @@
 
             </section>
                 
+<section class="dashboard-section" id="section-calendar">
+
+    <!-- CALENDAR HERO -->
+    <div class="calendar-hero">
+        <div>
+            <span class="calendar-eyebrow">YOUR LIFE AT A GLANCE</span>
+            <h2>Make every day count.</h2>
+            <p>Track your activities, understand your patterns, and celebrate your growth.</p>
+        </div>
+        <div class="calendar-hero-icon">
+            <i data-lucide="calendar-days"></i>
+        </div>
+    </div>
+
+    <!-- SUMMARY CARDS -->
+    <div class="calendar-summary">
+
+        <div class="calendar-summary-card">
+            <i data-lucide="check-circle"></i>
+            <span>Completed Habits</span>
+            <strong id="calendarHabitsCount">0</strong>
+        </div>
+
+        <div class="calendar-summary-card">
+            <i data-lucide="heart"></i>
+            <span>Mood Entries</span>
+            <strong id="calendarMoodCount">0</strong>
+        </div>
+
+        <div class="calendar-summary-card">
+            <i data-lucide="book-open"></i>
+            <span>Journal Entries</span>
+            <strong id="calendarJournalCount">0</strong>
+        </div>
+
+        <div class="calendar-summary-card">
+            <i data-lucide="flag"></i>
+            <span>Upcoming Goals</span>
+            <strong id="calendarGoalsCount">0</strong>
+        </div>
+
+    </div>
+
+    <!-- MONTHLY CALENDAR -->
+    <div class="calendar-main-card">
+
+        <div class="calendar-toolbar">
+            <div>
+                <span>YOUR SCHEDULE</span>
+                <h3 id="calendarMonthTitle">Loading Calendar...</h3>
+            </div>
+
+            <div class="calendar-navigation">
+                <button type="button" id="calendarPrevMonth"
+                    aria-label="Previous month">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+
+                <button type="button" id="calendarTodayButton">
+                    Today
+                </button>
+
+                <button type="button" id="calendarNextMonth"
+                    aria-label="Next month">
+                    <i data-lucide="chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="calendar-weekdays">
+            <span>Sun</span>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid">
+            <p class="empty-message">Preparing your calendar...</p>
+        </div>
+
+        <div class="calendar-legend">
+            <span><i class="legend-dot habit-dot"></i>Habits</span>
+            <span><i class="legend-dot mood-dot"></i>Mood</span>
+            <span><i class="legend-dot journal-dot"></i>Journal</span>
+            <span><i class="legend-dot goal-dot"></i>Goals</span>
+        </div>
+
+    </div>
+
+    <!-- SELECTED DAY DETAILS -->
+    <div class="calendar-day-details" id="calendarDayDetails">
+
+        <div class="calendar-details-heading">
+            <div>
+                <span>DAILY OVERVIEW</span>
+                <h3 id="calendarSelectedDate">Select a date</h3>
+            </div>
+        </div>
+
+        <div id="calendarEvents">
+            <p class="empty-message">
+                Select a date to view your activities.
+            </p>
+        </div>
+
+    </div>
+
+    <!-- GROWTH ANALYTICS -->
+    <div class="calendar-analytics">
+
+        <div class="calendar-analytics-heading">
+            <div>
+                <span>YOUR PERSONAL ANALYTICS</span>
+                <h3>Your Growth in Numbers</h3>
+                <p>Understand your patterns and celebrate your progress.</p>
+            </div>
+
+            <select id="analyticsPeriod">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+            </select>
+        </div>
+
+        <div class="analytics-grid">
+
+            <div class="analytics-card">
+                <h4>Habit Completion Trend</h4>
+                <p>Your daily habit performance</p>
+                <div class="analytics-chart">
+                    <canvas id="habitTrendChart"></canvas>
+                </div>
+            </div>
+
+            <div class="analytics-card">
+                <h4>Mood Trends</h4>
+                <p>Your emotional patterns over time</p>
+                <div class="analytics-chart">
+                    <canvas id="moodTrendChart"></canvas>
+                </div>
+            </div>
+
+            <div class="analytics-card">
+                <h4>Daily Activity</h4>
+                <p>Your engagement across activities</p>
+                <div class="analytics-chart">
+                    <canvas id="dailyActivityChart"></canvas>
+                </div>
+            </div>
+
+            <div class="analytics-card">
+                <h4>Monthly Productivity</h4>
+                <p>Your overall progress distribution</p>
+                <div class="analytics-chart">
+                    <canvas id="productivityChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- CALENDAR FOOTER -->
+    <div class="calendar-footer-quote">
+        <i data-lucide="sparkles"></i>
+        <p>Don't count the days. Make the days count.</p>
+        <span>YOUR TIME. YOUR JOURNEY.</span>
+    </div>
+
+</section>
+                
+                
                 
                 
                 
@@ -912,6 +1087,7 @@
     <script src="supabase.js"></script>
 
     <!-- DASHBOARD JAVASCRIPT -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="dashboard.js"></script>
 
     <script>
