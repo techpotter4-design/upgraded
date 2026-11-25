@@ -486,5 +486,245 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
 });
+
+// =====================================
+// SECTION 5: HABIT MANAGEMENT JS
+// =====================================
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const app = window.LifeTrack;
+    if (!app) return;
+
+    const $ = id => document.getElementById(id);
+
+    const form = $("habitForm");
+    const formCard = $("habitFormCard");
+    const list = $("habitList");
+
+    let habits = [];
+    let logs = [];
+
+    document.addEventListener("lifetrack:ready", loadHabits);
+
+    // OPEN FORM
+    $("addHabitButton").onclick = () => {
+        form.reset();
+        $("habitId").value = "";
+        $("habitFormTitle").textContent = "Create a New Habit";
+        formCard.hidden = false;
+    };
+
+    $("cancelHabitButton").onclick = () => {
+        formCard.hidden = true;
+        form.reset();
+    };
+
+    // SAVE HABIT
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const id = $("habitId").value;
+        const frequency = $("habitFrequency").value;
+
+        const targetDays = frequency === "daily"
+            ? [0,1,2,3,4,5,6]
+            : [...form.querySelectorAll(
+                '.habit-days input:checked'
+              )].map(input => Number(input.value));
+
+        if (!targetDays.length) {
+            alert("Please select at least one day.");
+            return;
+        }
+
+        const record = {
+            user_id: app.user.id,
+            title: $("habitName").value.trim(),
+            description: $("habitDescription").value.trim(),
+            frequency,
+            target_days: targetDays,
+            color: $("habitColor").value,
+            is_active: true
+        };
+
+        if (!record.title) return;
+
+        const result = id
+            ? await app.db.from("habits")
+                .update(record).eq("id", id)
+                .eq("user_id", app.user.id)
+            : await app.db.from("habits").insert(record);
+
+        if (result.error) {
+            alert("Could not save habit: " + result.error.message);
+            return;
+        }
+
+        formCard.hidden = true;
+        form.reset();
+        await loadHabits();
+    });
+
+    // LOAD HABITS AND TODAY'S LOGS
+    async function loadHabits() {
+        const today = new Date().toISOString().split("T")[0];
+
+        const [habitResult, logResult] = await Promise.all([
+            app.db.from("habits").select("*")
+                .eq("user_id", app.user.id)
+                .eq("is_active", true)
+                .order("created_at", { ascending: false }),
+
+            app.db.from("habit_logs").select("*")
+                .eq("user_id", app.user.id)
+                .eq("completed_on", today)
+        ]);
+
+        if (habitResult.error || logResult.error) {
+            console.error(habitResult.error || logResult.error);
+            list.textContent = "Unable to load habits.";
+            return;
+        }
+
+        habits = habitResult.data || [];
+        logs = logResult.data || [];
+
+        renderHabits();
+    }
+
+    // DISPLAY HABITS
+    function renderHabits() {
+        const today = new Date().getDay();
+
+        const scheduled = habits.filter(h =>
+            (h.target_days || []).includes(today)
+        );
+
+        const completed = logs.filter(l => l.completed).length;
+
+        $("habitTotal").textContent = habits.length;
+        $("habitCompleted").textContent = completed;
+        $("habitRate").textContent = scheduled.length
+            ? Math.round(completed / scheduled.length * 100) + "%"
+            : "0%";
+
+        list.textContent = "";
+
+        if (!habits.length) {
+            list.textContent = "No habits yet. Create your first habit!";
+            return;
+        }
+
+        habits.forEach(habit => {
+            const done = logs.some(
+                l => l.habit_id === habit.id && l.completed
+            );
+
+            const item = document.createElement("div");
+            item.className = "habit-item";
+
+            const info = document.createElement("div");
+            info.className = "habit-item-info";
+
+            const name = document.createElement("strong");
+            name.textContent = habit.title;
+            name.style.color = habit.color || "inherit";
+
+            const description = document.createElement("span");
+            description.textContent = habit.description || habit.frequency;
+
+            info.append(name, description);
+
+            const actions = document.createElement("div");
+            actions.className = "habit-item-actions";
+
+            const check = document.createElement("button");
+            check.className = "habit-check" + (done ? " completed" : "");
+            check.textContent = done ? "✓" : "○";
+            check.setAttribute("aria-label", "Toggle completion");
+            check.onclick = () => toggleHabit(habit, done);
+
+            const edit = document.createElement("button");
+            edit.textContent = "Edit";
+            edit.onclick = () => editHabit(habit);
+
+            const remove = document.createElement("button");
+            remove.textContent = "Delete";
+            remove.onclick = () => deleteHabit(habit);
+
+            actions.append(check, edit, remove);
+            item.append(info, actions);
+            list.appendChild(item);
+        });
+    }
+
+    // COMPLETE OR UNCOMPLETE
+    async function toggleHabit(habit, done) {
+        const today = new Date().toISOString().split("T")[0];
+
+        const existing = logs.find(l => l.habit_id === habit.id);
+
+        let result;
+
+        if (existing) {
+            result = await app.db.from("habit_logs")
+                .update({ completed: !done })
+                .eq("id", existing.id)
+                .eq("user_id", app.user.id);
+        } else {
+            result = await app.db.from("habit_logs").insert({
+                habit_id: habit.id,
+                user_id: app.user.id,
+                completed_on: today,
+                completed: true
+            });
+        }
+
+        if (result.error) {
+            alert("Could not update habit: " + result.error.message);
+            return;
+        }
+
+        await loadHabits();
+    }
+
+    // EDIT HABIT
+    function editHabit(habit) {
+        $("habitId").value = habit.id;
+        $("habitName").value = habit.title;
+        $("habitDescription").value = habit.description || "";
+        $("habitFrequency").value = habit.frequency;
+        $("habitColor").value = habit.color || "#8b5cf6";
+
+        form.querySelectorAll(".habit-days input")
+            .forEach(input => {
+                input.checked = (habit.target_days || [])
+                    .includes(Number(input.value));
+            });
+
+        $("habitFormTitle").textContent = "Edit Habit";
+        formCard.hidden = false;
+    }
+
+    // DELETE HABIT
+    async function deleteHabit(habit) {
+        if (!confirm("Delete this habit?")) return;
+
+        const { error } = await app.db.from("habits")
+            .delete()
+            .eq("id", habit.id)
+            .eq("user_id", app.user.id);
+
+        if (error) {
+            alert("Could not delete habit: " + error.message);
+            return;
+        }
+
+        await loadHabits();
+    }
+
+});
+        
                     
             
