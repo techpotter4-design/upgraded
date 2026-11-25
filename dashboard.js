@@ -2609,6 +2609,464 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 })();
-                             
+    
+/* =========================================
+   LIFETRACK ACHIEVEMENTS - PART 1
+   Data loading and achievement definitions
+========================================= */
+
+(() => {
+    "use strict";
+
+    const achievementState = {
+        db: null,
+        user: null,
+        logs: [],
+        moods: [],
+        journals: [],
+        goals: [],
+        achievements: []
+    };
+
+    const el = id => document.getElementById(id);
+
+    function setText(id, value) {
+        const element = el(id);
+        if (element) element.textContent = value;
+    }
+
+    function calculateBestStreak() {
+        const dates = [...new Set(
+            achievementState.logs
+                .filter(item => item.completed === true && item.completed_on)
+                .map(item => item.completed_on)
+        )].sort();
+
+        if (!dates.length) return 0;
+
+        let best = 1;
+        let current = 1;
+
+        for (let i = 1; i < dates.length; i++) {
+            const previous = new Date(dates[i - 1] + "T12:00:00");
+            const next = new Date(dates[i] + "T12:00:00");
+
+            const difference = Math.round(
+                (next - previous) / 86400000
+            );
+
+            if (difference === 1) {
+                current++;
+                best = Math.max(best, current);
+            } else if (difference > 1) {
+                current = 1;
+            }
+        }
+
+        return best;
+    }
+
+    function defineAchievements() {
+        const completedHabits = achievementState.logs.filter(
+            item => item.completed === true
+        ).length;
+
+        const moodCount = achievementState.moods.length;
+        const journalCount = achievementState.journals.length;
+
+        const completedGoals = achievementState.goals.filter(
+            goal => String(goal.status || "").toLowerCase() === "completed"
+        ).length;
+
+        const streak = calculateBestStreak();
+
+        const definitions = [
+            {
+                id: "first-habit",
+                title: "First Step",
+                description: "Complete your first habit.",
+                icon: "target",
+                category: "Habits",
+                current: completedHabits,
+                target: 1,
+                points: 10
+            },
+            {
+                id: "habit-10",
+                title: "Building Momentum",
+                description: "Complete 10 habits.",
+                icon: "trending-up",
+                category: "Habits",
+                current: completedHabits,
+                target: 10,
+                points: 25
+            },
+            {
+                id: "habit-50",
+                title: "Consistency Champion",
+                description: "Complete 50 habits.",
+                icon: "medal",
+                category: "Habits",
+                current: completedHabits,
+                target: 50,
+                points: 75
+            },
+            {
+                id: "habit-100",
+                title: "Century Club",
+                description: "Complete 100 habits.",
+                icon: "trophy",
+                category: "Habits",
+                current: completedHabits,
+                target: 100,
+                points: 150
+            },
+            {
+                id: "streak-3",
+                title: "Three-Day Streak",
+                description: "Record completed habits on three consecutive days.",
+                icon: "flame",
+                category: "Consistency",
+                current: streak,
+                target: 3,
+                points: 20
+            },
+            {
+                id: "streak-7",
+                title: "One-Week Warrior",
+                description: "Build a seven-day habit completion streak.",
+                icon: "zap",
+                category: "Consistency",
+                current: streak,
+                target: 7,
+                points: 50
+            },
+            {
+                id: "streak-14",
+                title: "Two-Week Discipline",
+                description: "Build a fourteen-day habit completion streak.",
+                icon: "shield-check",
+                category: "Consistency",
+                current: streak,
+                target: 14,
+                points: 100
+            },
+            {
+                id: "streak-30",
+                title: "Unstoppable",
+                description: "Build a thirty-day habit completion streak.",
+                icon: "crown",
+                category: "Consistency",
+                current: streak,
+                target: 30,
+                points: 250
+            },
+            {
+                id: "first-mood",
+                title: "Self-Awareness",
+                description: "Record your first mood entry.",
+                icon: "heart",
+                category: "Wellness",
+                current: moodCount,
+                target: 1,
+                points: 10
+            },
+            {
+                id: "mood-7",
+                title: "Emotional Explorer",
+                description: "Record seven mood entries.",
+                icon: "smile",
+                category: "Wellness",
+                current: moodCount,
+                target: 7,
+                points: 30
+            },
+            {
+                id: "mood-30",
+                title: "Mindful Month",
+                description: "Record thirty mood entries.",
+                icon: "brain",
+                category: "Wellness",
+                current: moodCount,
+                target: 30,
+                points: 100
+            },
+            {
+                id: "first-journal",
+                title: "Dear Journal",
+                description: "Write your first journal entry.",
+                icon: "book-open",
+                category: "Reflection",
+                current: journalCount,
+                target: 1,
+                points: 10
+            },
+            {
+                id: "journal-10",
+                title: "Reflective Mind",
+                description: "Write ten journal entries.",
+                icon: "notebook-pen",
+                category: "Reflection",
+                current: journalCount,
+                target: 10,
+                points: 40
+            },
+            {
+                id: "first-goal",
+                title: "Goal Getter",
+                description: "Complete your first goal.",
+                icon: "flag",
+                category: "Goals",
+                current: completedGoals,
+                target: 1,
+                points: 30
+            },
+            {
+                id: "goals-5",
+                title: "Goal Master",
+                description: "Complete five goals.",
+                icon: "award",
+                category: "Goals",
+                current: completedGoals,
+                target: 5,
+                points: 100
+            }
+        ];
+
+        achievementState.achievements = definitions.map(item => ({
+            ...item,
+            unlocked: item.current >= item.target,
+            progress: Math.min(
+                100,
+                Math.round((item.current / item.target) * 100)
+            )
+        }));
+    }
+
+    async function loadAchievements() {
+        achievementState.db =
+            window.LifeTrack?.db || window.lifeTrackSupabase;
+
+        achievementState.user = window.LifeTrack?.user;
+
+        if (!achievementState.db || !achievementState.user) {
+            console.error("Achievements: User authentication is not ready.");
+            return;
+        }
+
+        try {
+            const [logs, moods, journals, goals] = await Promise.all([
+                achievementState.db.from("habit_logs")
+                    .select("id,completed_on,completed")
+                    .eq("user_id", achievementState.user.id),
+
+                achievementState.db.from("mood_entries")
+                    .select("id,entry_date")
+                    .eq("user_id", achievementState.user.id),
+
+                achievementState.db.from("journal_entries")
+                    .select("id,entry_date")
+                    .eq("user_id", achievementState.user.id),
+
+                achievementState.db.from("goals")
+                    .select("id,status")
+                    .eq("user_id", achievementState.user.id)
+            ]);
+
+            for (const result of [logs, moods, journals, goals]) {
+                if (result.error) throw result.error;
+            }
+
+            achievementState.logs = logs.data || [];
+            achievementState.moods = moods.data || [];
+            achievementState.journals = journals.data || [];
+            achievementState.goals = goals.data || [];
+
+            defineAchievements();
+            renderAchievements();
+
+        } catch (error) {
+            console.error("Achievements loading error:", error);
+
+            const grid = el("achievementGrid");
+            if (grid) {
+                grid.textContent =
+                    "Unable to load achievements. Please refresh and try again.";
+            }
+        }
+                }
+    
+    /* =========================================
+       LIFETRACK ACHIEVEMENTS - PART 2
+       Display and interaction
+    ========================================= */
+
+    function renderAchievementSummary() {
+        const all = achievementState.achievements;
+        const unlocked = all.filter(item => item.unlocked);
+
+        const points = unlocked.reduce(
+            (total, item) => total + item.points, 0
+        );
+
+        const percentage = all.length
+            ? Math.round((unlocked.length / all.length) * 100)
+            : 0;
+
+        setText("achievementUnlocked", unlocked.length);
+        setText("achievementLocked", all.length - unlocked.length);
+        setText("achievementPoints", points);
+        setText("achievementCompletion", `${percentage}%`);
+    }
+
+    function createAchievementCard(item) {
+        const card = document.createElement("article");
+        card.className = `achievement-card ${
+            item.unlocked ? "unlocked" : "locked"
+        }`;
+
+        const points = document.createElement("span");
+        points.className = "achievement-points";
+        points.textContent = `+${item.points} points`;
+
+        const badge = document.createElement("div");
+        badge.className = "achievement-badge";
+
+        const icon = document.createElement("i");
+        icon.setAttribute("data-lucide", item.icon);
+        badge.appendChild(icon);
+
+        const title = document.createElement("h4");
+        title.textContent = item.title;
+
+        const description = document.createElement("p");
+        description.textContent = item.description;
+
+        const category = document.createElement("small");
+        category.textContent = item.category;
+        category.style.color = "#a99aff";
+
+        const status = document.createElement("span");
+        status.className = "achievement-status";
+
+        if (item.unlocked) {
+            status.textContent = "✓ UNLOCKED";
+        } else {
+            status.textContent = "🔒 LOCKED";
+        }
+
+        card.append(points, badge, category, title, description);
+
+        if (!item.unlocked) {
+            const progressText = document.createElement("small");
+            progressText.textContent =
+                `${item.current} / ${item.target} completed`;
+
+            progressText.style.display = "block";
+            progressText.style.marginTop = "14px";
+            progressText.style.color = "#929bb0";
+
+            const progress = document.createElement("div");
+            progress.className = "achievement-progress";
+
+            const fill = document.createElement("div");
+            fill.className = "achievement-progress-fill";
+            fill.style.width = `${item.progress}%`;
+
+            progress.appendChild(fill);
+            card.append(progressText, progress);
+        }
+
+        card.appendChild(status);
+
+        return card;
+    }
+
+    function renderAchievementGrid() {
+        const grid = el("achievementGrid");
+        if (!grid) return;
+
+        const filter = el("achievementFilter")?.value || "all";
+
+        let items = achievementState.achievements;
+
+        if (filter === "unlocked") {
+            items = items.filter(item => item.unlocked);
+        } else if (filter === "locked") {
+            items = items.filter(item => !item.unlocked);
+        }
+
+        grid.replaceChildren();
+
+        if (!items.length) {
+            const empty = document.createElement("div");
+            empty.className = "achievements-empty";
+
+            empty.textContent = filter === "unlocked"
+                ? "No achievements unlocked yet. Your first milestone is waiting!"
+                : "Congratulations! You've unlocked every achievement.";
+
+            grid.appendChild(empty);
+            return;
+        }
+
+        items.forEach(item => {
+            grid.appendChild(createAchievementCard(item));
+        });
+
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    }
+
+    function renderNextAchievement() {
+        const next = achievementState.achievements
+            .filter(item => !item.unlocked)
+            .sort((a, b) => {
+                const ratioA = a.current / a.target;
+                const ratioB = b.current / b.target;
+                return ratioB - ratioA;
+            })[0];
+
+        if (!next) {
+            setText("nextAchievementTitle", "Achievement Master!");
+            setText("nextAchievementDescription",
+                "You've unlocked every available achievement. Keep growing!");
+            return;
+        }
+
+        const remaining = Math.max(0, next.target - next.current);
+
+        setText("nextAchievementTitle", next.title);
+
+        setText("nextAchievementDescription",
+            `${next.description} ${remaining} more ${
+                remaining === 1 ? "record" : "records"
+            } needed to unlock it.`
+        );
+    }
+
+    function renderAchievements() {
+        renderAchievementSummary();
+        renderAchievementGrid();
+        renderNextAchievement();
+    }
+
+    /* ACHIEVEMENT FILTER */
+
+    el("achievementFilter")?.addEventListener("change", () => {
+        renderAchievementGrid();
+    });
+
+    /* INITIALIZATION */
+
+    document.addEventListener("lifetrack:ready", loadAchievements);
+
+    if (window.LifeTrack?.user) {
+        loadAchievements();
+    }
+
+})();
+        
             
                                                 
