@@ -1369,7 +1369,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const priority = document.createElement("span");
         priority.textContent =
-            `Priority: ${goal.priority || "medium"}`;
+            `Priority: $("goalPriority").value = "medium";
 
         const deadline = document.createElement("span");
         deadline.textContent = goal.target_date
@@ -1514,9 +1514,6 @@ document.addEventListener("DOMContentLoaded", () => {
             status: progress === 100 ? "completed" : "active"
         };
 
-        // Only include priority if the database has this column.
-        // Remove this property if your goals table does not have it.
-        record.priority = priority;
 
         const saveButton = $("saveGoalButton");
         saveButton.disabled = true;
