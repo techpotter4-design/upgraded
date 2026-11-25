@@ -178,7 +178,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         document.querySelectorAll(".dashboard-section")
-            .forEach(item => item.hidden = true);
+    .forEach(item => {
+        item.classList.remove("active");
+        item.hidden = true;
+    });
+
+target.hidden = false;
+target.classList.add("active");
 
         target.hidden = false;
 
