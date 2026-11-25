@@ -1680,4 +1680,547 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 });
+
+/* =========================================
+   LIFETRACK CALENDAR - PART 1
+   Data, summaries, calendar and daily events
+========================================= */
+
+(() => {
+    "use strict";
+
+    const state = {
+        db: null,
+        user: null,
+        habits: [],
+        moods: [],
+        journals: [],
+        goals: [],
+        logs: [],
+        currentMonth: new Date(),
+        selectedDate: new Date(),
+        charts: {}
+    };
+
+    const $ = id => document.getElementById(id);
+
+    const dateKey = date => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    };
+
+    const parseDate = value => {
+        const [y, m, d] = value.split("-").map(Number);
+        return new Date(y, m - 1, d);
+    };
+
+    const showMessage = (element, message) => {
+        if (!element) return;
+        element.textContent = message;
+    };
+
+    async function loadCalendarData() {
+        state.db = window.LifeTrack?.db || window.lifeTrackSupabase;
+        state.user = window.LifeTrack?.user;
+
+        if (!state.db || !state.user) {
+            console.error("Calendar: Supabase user not ready.");
+            return;
+        }
+
+        try {
+            const [logs, moods, journals, goals] = await Promise.all([
+                state.db.from("habit_logs")
+                    .select("id,habit_id,user_id,completed_on,completed")
+                    .eq("user_id", state.user.id),
+
+                state.db.from("mood_entries")
+                    .select("id,mood,mood_score,note,entry_date")
+                    .eq("user_id", state.user.id),
+
+                state.db.from("journal_entries")
+                    .select("id,title,entry_date")
+                    .eq("user_id", state.user.id),
+
+                state.db.from("goals")
+                    .select("id,title,target_date,status,progress")
+                    .eq("user_id", state.user.id)
+            ]);
+
+            const results = [logs, moods, journals, goals];
+
+            for (const result of results) {
+                if (result.error) throw result.error;
+            }
+
+            state.logs = logs.data || [];
+            state.moods = moods.data || [];
+            state.journals = journals.data || [];
+            state.goals = goals.data || [];
+
+            updateCalendarSummary();
+            renderCalendar();
+            renderSelectedDay();
+            renderCalendarCharts();
+
+        } catch (error) {
+            console.error("Calendar loading error:", error);
+            showMessage($("calendarGrid"),
+                "Unable to load calendar data. Please refresh the page.");
+        }
+    }
+
+    function updateCalendarSummary() {
+        const month = state.currentMonth.getMonth();
+        const year = state.currentMonth.getFullYear();
+
+        const inMonth = value => {
+            if (!value) return false;
+            const date = parseDate(value);
+            return date.getMonth() === month &&
+                   date.getFullYear() === year;
+        };
+
+        const completed = state.logs.filter(log =>
+            log.completed === true && inMonth(log.completed_on)
+        ).length;
+
+        const moods = state.moods.filter(item =>
+            inMonth(item.entry_date)
+        ).length;
+
+        const journals = state.journals.filter(item =>
+            inMonth(item.entry_date)
+        ).length;
+
+        const today = dateKey(new Date());
+
+        const upcoming = state.goals.filter(goal =>
+            goal.target_date &&
+            goal.target_date >= today &&
+            goal.status !== "completed"
+        ).length;
+
+        showMessage($("calendarHabitsCount"), completed);
+        showMessage($("calendarMoodCount"), moods);
+        showMessage($("calendarJournalCount"), journals);
+        showMessage($("calendarGoalsCount"), upcoming);
+    }
+
+    function getEventsForDate(key) {
+        return {
+            habits: state.logs.filter(item =>
+                item.completed === true && item.completed_on === key
+            ),
+            moods: state.moods.filter(item => item.entry_date === key),
+            journals: state.journals.filter(item => item.entry_date === key),
+            goals: state.goals.filter(item => item.target_date === key)
+        };
+    }
+
+    function renderCalendar() {
+        const grid = $("calendarGrid");
+        if (!grid) return;
+
+        grid.replaceChildren();
+
+        const year = state.currentMonth.getFullYear();
+        const month = state.currentMonth.getMonth();
+
+        const title = new Date(year, month, 1).toLocaleDateString(
+            "en-US", { month: "long", year: "numeric" }
+        );
+
+        showMessage($("calendarMonthTitle"), title);
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const todayKey = dateKey(new Date());
+
+        for (let i = 0; i < firstDay; i++) {
+            const blank = document.createElement("div");
+            blank.className = "calendar-empty";
+            grid.appendChild(blank);
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day);
+            const key = dateKey(date);
+            const events = getEventsForDate(key);
+
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "calendar-day";
+            button.dataset.date = key;
+
+            if (key === todayKey) button.classList.add("today");
+            if (key === dateKey(state.selectedDate)) {
+                button.classList.add("selected");
+            }
+
+            const number = document.createElement("span");
+            number.textContent = day;
+            button.appendChild(number);
+
+            const dots = document.createElement("div");
+            dots.className = "calendar-day-dots";
+
+            [
+                [events.habits.length, "habit-dot"],
+                [events.moods.length, "mood-dot"],
+                [events.journals.length, "journal-dot"],
+                [events.goals.length, "goal-dot"]
+            ].forEach(([count, className]) => {
+                if (count > 0) {
+                    const dot = document.createElement("i");
+                    dot.className = `legend-dot ${className}`;
+                    dots.appendChild(dot);
+                }
+            });
+
+            button.appendChild(dots);
+
+            button.addEventListener("click", () => {
+                state.selectedDate = date;
+                renderCalendar();
+                renderSelectedDay();
+            });
+
+            grid.appendChild(button);
+        }
+    }
+
+    function addEvent(container, label, detail) {
+        const item = document.createElement("div");
+        item.className = "calendar-event";
+
+        const heading = document.createElement("strong");
+        heading.textContent = label;
+
+        const description = document.createElement("p");
+        description.textContent = detail;
+
+        item.append(heading, description);
+        container.appendChild(item);
+    }
+
+    function renderSelectedDay() {
+        const container = $("calendarEvents");
+        if (!container) return;
+
+        const key = dateKey(state.selectedDate);
+        const events = getEventsForDate(key);
+
+        showMessage($("calendarSelectedDate"),
+            state.selectedDate.toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                year: "numeric"
+            })
+        );
+
+        container.replaceChildren();
+
+        let total = 0;
+
+        events.habits.forEach(() => {
+            addEvent(container, "Habit completed",
+                "You recorded a completed habit.");
+            total++;
+        });
+
+        events.moods.forEach(item => {
+            addEvent(container, `Mood: ${item.mood || "Recorded"}`,
+                item.note || `Mood score: ${item.mood_score ?? "Not provided"}`);
+            total++;
+        });
+
+        events.journals.forEach(item => {
+            addEvent(container, "Journal entry",
+                item.title || "You wrote a journal entry.");
+            total++;
+        });
+
+        events.goals.forEach(item => {
+            addEvent(container, "Goal deadline",
+                item.title || "A goal is due today.");
+            total++;
+        });
+
+        if (total === 0) {
+            const empty = document.createElement("p");
+            empty.className = "empty-message";
+            empty.textContent = "No recorded activities for this date.";
+            container.appendChild(empty);
+        }
+                                            }
+
+    
+    /* =========================================
+       LIFETRACK CALENDAR - PART 2
+       Analytics, graphs and navigation
+    ========================================= */
+
+    function getPeriodData(days) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const labels = [];
+        const keys = [];
+
+        for (let i = days - 1; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+
+            keys.push(dateKey(date));
+            labels.push(date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric"
+            }));
+        }
+
+        const habitCounts = keys.map(key =>
+            state.logs.filter(item =>
+                item.completed === true && item.completed_on === key
+            ).length
+        );
+
+        const moodScores = keys.map(key => {
+            const entries = state.moods.filter(item =>
+                item.entry_date === key &&
+                Number(item.mood_score) > 0
+            );
+
+            if (!entries.length) return null;
+
+            const average = entries.reduce(
+                (sum, item) => sum + Number(item.mood_score), 0
+            ) / entries.length;
+
+            return Number(average.toFixed(1));
+        });
+
+        const moodCounts = keys.map(key =>
+            state.moods.filter(item => item.entry_date === key).length
+        );
+
+        const journalCounts = keys.map(key =>
+            state.journals.filter(item => item.entry_date === key).length
+        );
+
+        return {
+            labels,
+            habitCounts,
+            moodScores,
+            moodCounts,
+            journalCounts
+        };
+    }
+
+    function renderCalendarCharts() {
+        if (typeof Chart === "undefined") {
+            console.warn("Chart.js is unavailable. Analytics graphs cannot load.");
+            return;
+        }
+
+        const period = Number($("analyticsPeriod")?.value || 30);
+        const data = getPeriodData(period);
+
+        Object.values(state.charts).forEach(chart => chart.destroy());
+        state.charts = {};
+
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: "#aeb6ca",
+                        usePointStyle: true
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: "#929bb0" },
+                    grid: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: "#929bb0", precision: 0 },
+                    grid: { color: "#ffffff12" }
+                }
+            }
+        };
+
+        const createChart = (id, config) => {
+            const canvas = $(id);
+            if (!canvas) return;
+            state.charts[id] = new Chart(canvas, config);
+        };
+
+        // 1. HABIT COMPLETION TREND
+        createChart("habitTrendChart", {
+            type: "line",
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: "Completed habits",
+                    data: data.habitCounts,
+                    borderColor: "#a78bfa",
+                    backgroundColor: "#a78bfa25",
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 2
+                }]
+            },
+            options: commonOptions
+        });
+
+        // 2. MOOD TREND
+        createChart("moodTrendChart", {
+            type: "line",
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: "Average mood score",
+                    data: data.moodScores,
+                    borderColor: "#f472b6",
+                    backgroundColor: "#f472b625",
+                    fill: true,
+                    tension: 0.35,
+                    spanGaps: false,
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: {
+                        min: 1,
+                        max: 5,
+                        ticks: {
+                            stepSize: 1,
+                            color: "#929bb0"
+                        },
+                        grid: { color: "#ffffff12" }
+                    }
+                }
+            }
+        });
+
+        // 3. DAILY ACTIVITY
+        createChart("dailyActivityChart", {
+            type: "bar",
+            data: {
+                labels: data.labels,
+                datasets: [
+                    {
+                        label: "Habits",
+                        data: data.habitCounts,
+                        backgroundColor: "#a78bfa"
+                    },
+                    {
+                        label: "Mood entries",
+                        data: data.moodCounts,
+                        backgroundColor: "#f472b6"
+                    },
+                    {
+                        label: "Journal entries",
+                        data: data.journalCounts,
+                        backgroundColor: "#38bdf8"
+                    }
+                ]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    x: {
+                        ...commonOptions.scales.x,
+                        stacked: true
+                    },
+                    y: {
+                        ...commonOptions.scales.y,
+                        stacked: true
+                    }
+                }
+            }
+        });
+
+        // 4. PRODUCTIVITY DISTRIBUTION
+        const totals = [
+            data.habitCounts.reduce((a, b) => a + b, 0),
+            data.moodCounts.reduce((a, b) => a + b, 0),
+            data.journalCounts.reduce((a, b) => a + b, 0)
+        ];
+
+        createChart("productivityChart", {
+            type: "doughnut",
+            data: {
+                labels: ["Completed habits", "Mood entries", "Journal entries"],
+                datasets: [{
+                    data: totals,
+                    backgroundColor: ["#a78bfa", "#f472b6", "#38bdf8"],
+                    borderColor: "#111729",
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            color: "#aeb6ca",
+                            padding: 18,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    /* MONTH NAVIGATION */
+
+    $("calendarPrevMonth")?.addEventListener("click", () => {
+        state.currentMonth.setMonth(state.currentMonth.getMonth() - 1);
+        updateCalendarSummary();
+        renderCalendar();
+    });
+
+    $("calendarNextMonth")?.addEventListener("click", () => {
+        state.currentMonth.setMonth(state.currentMonth.getMonth() + 1);
+        updateCalendarSummary();
+        renderCalendar();
+    });
+
+    $("calendarTodayButton")?.addEventListener("click", () => {
+        state.currentMonth = new Date();
+        state.selectedDate = new Date();
+        updateCalendarSummary();
+        renderCalendar();
+        renderSelectedDay();
+    });
+
+    $("analyticsPeriod")?.addEventListener("change", () => {
+        renderCalendarCharts();
+    });
+
+    /* INITIALIZE AFTER AUTHENTICATION */
+
+    document.addEventListener("lifetrack:ready", loadCalendarData);
+
+    if (window.LifeTrack?.user) {
+        loadCalendarData();
+    }
+
+})();
+            
                                                 
