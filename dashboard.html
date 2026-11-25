@@ -353,6 +353,114 @@
 </section>
 <!-- END OVERVIEW -->
                 
+<!-- SECTION 5: HABIT MANAGEMENT -->
+
+<section class="dashboard-section" id="section-habits">
+
+    <div class="section-header">
+        <div>
+            <h2>My Habits</h2>
+            <p>Build better routines, one day at a time.</p>
+        </div>
+
+        <button class="primary-button" id="addHabitButton">
+            <i data-lucide="plus"></i>
+            Add New Habit
+        </button>
+    </div>
+
+    <!-- HABIT SUMMARY -->
+    <div class="habit-summary">
+
+        <div class="habit-summary-card">
+            <span>Active Habits</span>
+            <strong id="habitTotal">0</strong>
+        </div>
+
+        <div class="habit-summary-card">
+            <span>Completed Today</span>
+            <strong id="habitCompleted">0</strong>
+        </div>
+
+        <div class="habit-summary-card">
+            <span>Completion Rate</span>
+            <strong id="habitRate">0%</strong>
+        </div>
+
+    </div>
+
+    <!-- HABIT FORM -->
+    <div class="habit-form-card" id="habitFormCard" hidden>
+
+        <h3 id="habitFormTitle">Create a New Habit</h3>
+
+        <form id="habitForm">
+
+            <input type="hidden" id="habitId">
+
+            <label for="habitName">Habit Name</label>
+            <input id="habitName" type="text"
+                   placeholder="e.g. Read for 30 minutes"
+                   maxlength="100" required>
+
+            <label for="habitDescription">Description</label>
+            <textarea id="habitDescription"
+                      placeholder="Describe your habit..."
+                      rows="3"></textarea>
+
+            <label for="habitFrequency">Frequency</label>
+            <select id="habitFrequency" required>
+                <option value="daily">Every day</option>
+                <option value="weekly">Weekly</option>
+                <option value="custom">Custom days</option>
+            </select>
+
+            <div class="habit-days">
+                <label><input type="checkbox" value="1"> Mon</label>
+                <label><input type="checkbox" value="2"> Tue</label>
+                <label><input type="checkbox" value="3"> Wed</label>
+                <label><input type="checkbox" value="4"> Thu</label>
+                <label><input type="checkbox" value="5"> Fri</label>
+                <label><input type="checkbox" value="6"> Sat</label>
+                <label><input type="checkbox" value="0"> Sun</label>
+            </div>
+
+            <label for="habitColor">Habit Color</label>
+            <input id="habitColor" type="color" value="#8b5cf6">
+
+            <div class="habit-form-actions">
+                <button type="button" id="cancelHabitButton">
+                    Cancel
+                </button>
+
+                <button type="submit" class="primary-button">
+                    Save Habit
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- HABIT LIST -->
+    <div class="habit-list-card">
+
+        <div class="card-heading">
+            <div>
+                <h3>Your Daily Routines</h3>
+                <p>Track your progress and stay consistent.</p>
+            </div>
+        </div>
+
+        <div id="habitList">
+            <p class="empty-message">Loading your habits...</p>
+        </div>
+
+    </div>
+
+</section>
+<!-- END HABIT MANAGEMENT -->
+                
+                
 
             </div>
             <!-- END DASHBOARD CONTENT -->
