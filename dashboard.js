@@ -731,6 +731,181 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 });
+
+// =====================================
+// LIFETRACK MOOD TRACKER
+// =====================================
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const app = window.LifeTrack;
+
+    if (!app) return;
+
+    const moodForm = document.getElementById("moodForm");
+    const moodHistory = document.getElementById("moodHistoryList");
+    const moodMessage = document.getElementById("moodMessage");
+    const saveButton = document.getElementById("saveMoodButton");
+
+    if (!moodForm || !moodHistory) return;
+
+    const moodScores = {
+        very_bad: 1,
+        bad: 2,
+        neutral: 3,
+        good: 4,
+        excellent: 5
+    };
+
+    function getToday() {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+
+        return `${year}-${month}-${day}`;
+    }
+
+    document.addEventListener("lifetrack:ready", loadMoodHistory);
+
+    moodForm.addEventListener("submit", async (event) => {
+
+        event.preventDefault();
+
+        const selectedMood = moodForm.querySelector(
+            'input[name="mood"]:checked'
+        );
+
+        if (!selectedMood) {
+            moodMessage.textContent = "Please select your mood.";
+            return;
+        }
+
+        const mood = selectedMood.value;
+        const note = document.getElementById("moodNote").value.trim();
+        const today = getToday();
+
+        const record = {
+            user_id: app.user.id,
+            mood: mood,
+            mood_score: moodScores[mood],
+            note: note,
+            entry_date: today
+        };
+
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving...";
+
+        try {
+
+            const existing = await app.db
+                .from("mood_entries")
+                .select("id")
+                .eq("user_id", app.user.id)
+                .eq("entry_date", today)
+                .maybeSingle();
+
+            if (existing.error) throw existing.error;
+
+            let result;
+
+            if (existing.data) {
+                result = await app.db
+                    .from("mood_entries")
+                    .update(record)
+                    .eq("id", existing.data.id)
+                    .eq("user_id", app.user.id);
+            } else {
+                result = await app.db
+                    .from("mood_entries")
+                    .insert(record);
+            }
+
+            if (result.error) throw result.error;
+
+            moodMessage.textContent = "Your mood was saved successfully!";
+            moodForm.reset();
+
+            await loadMoodHistory();
+
+        } catch (error) {
+
+            console.error("Mood saving error:", error);
+
+            moodMessage.textContent =
+                "Unable to save mood: " + error.message;
+
+        } finally {
+
+            saveButton.disabled = false;
+            saveButton.textContent = "Save Mood Check-in";
+
+        }
+
+    });
+
+    async function loadMoodHistory() {
+
+        if (!app.user) return;
+
+        moodHistory.textContent = "Loading mood history...";
+
+        try {
+
+            const { data, error } = await app.db
+                .from("mood_entries")
+                .select("id, mood, mood_score, note, entry_date")
+                .eq("user_id", app.user.id)
+                .order("entry_date", { ascending: false })
+                .limit(30);
+
+            if (error) throw error;
+
+            moodHistory.textContent = "";
+
+            if (!data || data.length === 0) {
+                moodHistory.textContent =
+                    "No mood entries yet. Record your first mood!";
+                return;
+            }
+
+            data.forEach(entry => {
+
+                const item = document.createElement("div");
+                item.className = "mood-history-item";
+
+                const details = document.createElement("div");
+
+                const title = document.createElement("strong");
+                title.textContent = entry.mood.replace("_", " ");
+
+                const note = document.createElement("span");
+                note.textContent = entry.note || "No notes added.";
+
+                details.append(title, note);
+
+                const date = document.createElement("span");
+                date.textContent =
+                    entry.entry_date + " · " +
+                    entry.mood_score + "/5";
+
+                item.append(details, date);
+                moodHistory.appendChild(item);
+
+            });
+
+        } catch (error) {
+
+            console.error("Mood history error:", error);
+
+            moodHistory.textContent =
+                "Unable to load mood history: " + error.message;
+
+        }
+    }
+
+});
+        
         
                     
             
