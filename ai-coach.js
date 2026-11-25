@@ -1,39 +1,141 @@
 
-/* =========================================
-   LIFETRACK AI COACH
-   FRONTEND INTERACTIONS
-========================================= */
+/* ============================================
+   LIFETRACK AI COACH V2
+   COMPLETE FRONTEND JAVASCRIPT
+============================================ */
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
 
-    // =====================================
-    // ELEMENTS
-    // =====================================
+    "use strict";
 
-    const chatForm = document.getElementById("coachChatForm");
-    const messageInput = document.getElementById("coachMessage");
-    const chatMessages = document.getElementById("chatMessages");
+    // =========================================
+    // 1. ELEMENTS
+    // =========================================
 
-    const sendButton = document.getElementById("coachSendButton");
-    const newChatButton = document.getElementById("newChatButton");
-    const clearChatButton = document.getElementById("clearChatButton");
+    const $ = (id) => document.getElementById(id);
 
-    const menuToggle = document.getElementById("coachMenuToggle");
-    const sidebar = document.getElementById("coachSidebar");
+    const elements = {
+        app: $("coachApp"),
+        sidebar: $("coachSidebar"),
+        overlay: $("sidebarOverlay"),
+        menu: $("coachMenuToggle"),
+        closeSidebar: $("sidebarCloseButton"),
 
-    const suggestionButtons = document.querySelectorAll("[data-coach-prompt]");
-    const navigationLinks = document.querySelectorAll("[data-coach-mode]");
+        newChat: $("newChatButton"),
+        history: $("chatHistoryList"),
 
-    // =====================================
-    // COACH STATE
-    // =====================================
+        theme: $("themeToggle"),
+        clear: $("clearChatButton"),
 
-    let currentMode = "general";
-    let conversationStarted = false;
+        messages: $("chatMessages"),
+        typing: $("typingIndicator"),
 
-    // =====================================
-    // ICON REFRESH
-    // =====================================
+        form: $("coachChatForm"),
+        input: $("coachMessage"),
+        send: $("coachSendButton"),
+
+        suggestions: $("coachSuggestions"),
+
+        plan: $("coachPlanName"),
+        access: $("coachAccessStatus"),
+
+        creditDescription: $("coachCreditDescription"),
+        creditCount: $("coachCreditCount")
+    };
+
+    // =========================================
+    // 2. STORAGE
+    // =========================================
+
+    const CHAT_STORAGE = "lifetrack_coach_v2_chats";
+    const THEME_STORAGE = "lifetrack_coach_v2_theme";
+
+    let conversations = [];
+    let activeChatId = null;
+    let activeMode = "general";
+
+    const coachingModes = [
+        "general",
+        "habits",
+        "mood",
+        "goals",
+        "routine"
+    ];
+
+    // =========================================
+    // 3. HELPERS
+    // =========================================
+
+    function generateId() {
+        return Date.now().toString(36) +
+            Math.random().toString(36).slice(2, 9);
+    }
+
+    function getActiveChat() {
+        return conversations.find(
+            chat => chat.id === activeChatId
+        );
+    }
+
+    function createNewChat() {
+        return {
+            id: generateId(),
+            title: "New conversation",
+            mode: activeMode,
+            messages: [],
+            updatedAt: Date.now()
+        };
+    }
+
+    function saveChats() {
+        try {
+            localStorage.setItem(
+                CHAT_STORAGE,
+                JSON.stringify(conversations)
+            );
+        } catch (error) {
+            console.error("Could not save chat history:", error);
+        }
+    }
+
+    function loadChats() {
+        try {
+            const saved = JSON.parse(
+                localStorage.getItem(CHAT_STORAGE) || "[]"
+            );
+
+            conversations = Array.isArray(saved)
+                ? saved.filter(chat =>
+                    chat &&
+                    typeof chat.id === "string" &&
+                    Array.isArray(chat.messages)
+                )
+                : [];
+
+        } catch (error) {
+            conversations = [];
+        }
+
+        if (conversations.length === 0) {
+            const chat = createNewChat();
+
+            conversations.push(chat);
+            activeChatId = chat.id;
+
+        } else {
+            activeChatId = conversations[0].id;
+            activeMode = conversations[0].mode || "general";
+        }
+
+        saveChats();
+    }
+
+    function formatTime(timestamp) {
+        return new Date(timestamp).toLocaleTimeString([], {
+            hour: "numeric",
+            minute: "2-digit"
+        });
+    }
 
     function refreshIcons() {
         if (window.lucide) {
@@ -41,339 +143,628 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // =====================================
-    // TIME
-    // =====================================
+    // =========================================
+    // 4. CHAT HISTORY
+    // =========================================
 
-    function getCurrentTime() {
-        return new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit"
-        });
-    }
+    function renderHistory() {
 
-    // =====================================
-    // CREATE MESSAGE
-    // =====================================
+        if (!elements.history) return;
 
-    function addMessage(message, sender) {
+        elements.history.replaceChildren();
 
-        if (!chatMessages) return;
-
-        const messageWrapper = document.createElement("div");
-
-        messageWrapper.className =
-            sender === "user"
-                ? "coach-message user-message"
-                : "coach-message assistant-message";
-
-        const avatar = document.createElement("div");
-        avatar.className = "message-avatar";
-
-        const icon = document.createElement("i");
-
-        icon.setAttribute(
-            "data-lucide",
-            sender === "user" ? "user" : "brain-circuit"
+        const sortedChats = [...conversations].sort(
+            (a, b) => b.updatedAt - a.updatedAt
         );
 
-        avatar.appendChild(icon);
+        if (sortedChats.length === 0) {
 
-        const content = document.createElement("div");
-        content.className = "message-content";
+            const empty = document.createElement("div");
 
-        const paragraph = document.createElement("p");
-        paragraph.textContent = message;
+            empty.className = "history-empty";
+            empty.textContent =
+                "Your conversations will appear here.";
 
-        const time = document.createElement("span");
-        time.className = "message-time";
+            elements.history.appendChild(empty);
 
-        time.textContent = getCurrentTime();
-
-        content.appendChild(paragraph);
-        content.appendChild(time);
-
-        messageWrapper.appendChild(avatar);
-        messageWrapper.appendChild(content);
-
-        chatMessages.appendChild(messageWrapper);
-
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-
-        refreshIcons();
-
-    }
-
-    // =====================================
-    // WELCOME MESSAGE
-    // =====================================
-
-    function showWelcomeMessage() {
-
-        if (!chatMessages) return;
-
-        chatMessages.innerHTML = "";
-
-        const welcome = document.createElement("div");
-
-        welcome.className = "coach-message assistant-message";
-
-        welcome.innerHTML = `
-            <div class="message-avatar">
-                <i data-lucide="brain-circuit"></i>
-            </div>
-
-            <div class="message-content">
-                <p>
-                    Welcome back to your LifeTrack AI Coach.
-                    What would you like to work on today?
-                    We can explore your habits, mood, goals
-                    or daily routine together.
-                </p>
-
-                <span class="message-time">Your coach</span>
-            </div>
-        `;
-
-        chatMessages.appendChild(welcome);
-
-        conversationStarted = false;
-
-        refreshIcons();
-
-    }
-
-    // =====================================
-    // TEMPORARY AI CONNECTION NOTICE
-    // =====================================
-
-    function showConnectionNotice() {
-
-        addMessage(
-            "Your message has been added to this conversation. The secure AI service has not been connected yet. We will connect the AI backend in the next development stage.",
-            "assistant"
-        );
-
-    }
-
-    // =====================================
-    // SEND MESSAGE
-    // =====================================
-
-    function sendMessage(message) {
-
-        if (!message || !message.trim()) return;
-
-        const cleanMessage = message.trim();
-
-        if (cleanMessage.length > 3000) {
-            alert("Please keep your message below 3,000 characters.");
             return;
         }
 
-        addMessage(cleanMessage, "user");
+        sortedChats.forEach(chat => {
 
-        conversationStarted = true;
+            const item = document.createElement("div");
 
-        if (messageInput) {
-            messageInput.value = "";
-            messageInput.focus();
-        }
+            item.className = "history-item";
 
-        if (sendButton) {
-            sendButton.disabled = true;
-        }
-
-        showConnectionNotice();
-
-        if (sendButton) {
-            sendButton.disabled = false;
-        }
-
-    }
-
-    // =====================================
-    // CHAT FORM
-    // =====================================
-
-    if (chatForm) {
-
-        chatForm.addEventListener("submit", function (event) {
-
-            event.preventDefault();
-
-            if (!messageInput) return;
-
-            sendMessage(messageInput.value);
-
-        });
-
-    }
-
-    // =====================================
-    // ENTER TO SEND
-    // SHIFT + ENTER FOR NEW LINE
-    // =====================================
-
-    if (messageInput) {
-
-        messageInput.addEventListener("keydown", function (event) {
-
-            if (event.key === "Enter" && !event.shiftKey) {
-
-                event.preventDefault();
-
-                if (chatForm) {
-                    chatForm.requestSubmit();
-                }
-
+            if (chat.id === activeChatId) {
+                item.classList.add("active");
             }
 
-        });
+            const openButton = document.createElement("button");
 
-    }
+            openButton.type = "button";
+            openButton.className = "history-open";
+            openButton.textContent = chat.title || "New conversation";
+            openButton.title = chat.title || "New conversation";
 
-    // =====================================
-    // SUGGESTED PROMPTS
-    // =====================================
+            openButton.addEventListener("click", () => {
 
-    suggestionButtons.forEach(function (button) {
+                activeChatId = chat.id;
+                activeMode = chat.mode || "general";
 
-        button.addEventListener("click", function () {
+                renderEverything();
+                closeSidebar();
 
-            const prompt = button.getAttribute("data-coach-prompt");
-
-            if (prompt) {
-                sendMessage(prompt);
-            }
-
-        });
-
-    });
-
-    // =====================================
-    // NEW CONVERSATION
-    // =====================================
-
-    if (newChatButton) {
-
-        newChatButton.addEventListener("click", function () {
-
-            showWelcomeMessage();
-
-            if (messageInput) {
-                messageInput.value = "";
-                messageInput.focus();
-            }
-
-            if (sidebar) {
-                sidebar.classList.remove("open");
-            }
-
-        });
-
-    }
-
-    // =====================================
-    // CLEAR CHAT
-    // =====================================
-
-    if (clearChatButton) {
-
-        clearChatButton.addEventListener("click", function () {
-
-            const confirmed = confirm(
-                "Are you sure you want to clear this conversation?"
-            );
-
-            if (!confirmed) return;
-
-            showWelcomeMessage();
-
-        });
-
-    }
-
-    // =====================================
-    // COACHING MODES
-    // =====================================
-
-    const modeMessages = {
-        general: "You are now in general AI coaching mode. What would you like to discuss?",
-        habits: "Let's focus on your habits. Which routine would you like to improve?",
-        mood: "Let's take a moment to reflect. How have you been feeling recently?",
-        goals: "Let's work on your goals. What would you like to achieve?",
-        routine: "Let's organise your day. What does your current daily routine look like?"
-    };
-
-    navigationLinks.forEach(function (link) {
-
-        link.addEventListener("click", function () {
-
-            currentMode = link.getAttribute("data-coach-mode") || "general";
-
-            navigationLinks.forEach(function (item) {
-                item.classList.remove("active");
             });
 
-            link.classList.add("active");
+            const deleteButton = document.createElement("button");
 
-            if (sidebar) {
-                sidebar.classList.remove("open");
-            }
+            deleteButton.type = "button";
+            deleteButton.className = "history-action";
+            deleteButton.textContent = "×";
+            deleteButton.setAttribute(
+                "aria-label",
+                "Delete conversation"
+            );
 
-            if (messageInput) {
-                messageInput.placeholder =
-                    "Ask your " + currentMode + " coach...";
-            }
+            deleteButton.addEventListener("click", event => {
 
-            addMessage(modeMessages[currentMode], "assistant");
+                event.stopPropagation();
+
+                if (!confirm(
+                    "Are you sure you want to delete this conversation?"
+                )) return;
+
+                conversations = conversations.filter(
+                    item => item.id !== chat.id
+                );
+
+                if (activeChatId === chat.id) {
+
+                    if (conversations.length === 0) {
+
+                        const newChat = createNewChat();
+
+                        conversations.push(newChat);
+                        activeChatId = newChat.id;
+
+                    } else {
+
+                        activeChatId = conversations[0].id;
+                        activeMode =
+                            conversations[0].mode || "general";
+                    }
+                }
+
+                saveChats();
+                renderEverything();
+
+            });
+
+            item.append(openButton, deleteButton);
+
+            elements.history.appendChild(item);
 
         });
+    }
+
+    // =========================================
+    // 5. RENDER MESSAGES
+    // =========================================
+
+    function renderMessages() {
+
+        if (!elements.messages) return;
+
+        elements.messages.replaceChildren();
+
+        const chat = getActiveChat();
+
+        if (!chat) return;
+
+        if (chat.messages.length === 0) {
+
+            const welcome = document.createElement("div");
+
+            welcome.className = "welcome-message";
+
+            const heading = document.createElement("h2");
+
+            heading.textContent = "Let's make progress.";
+
+            const paragraph = document.createElement("p");
+
+            paragraph.textContent =
+                "Tell me what you would like to improve today. Your growth journey starts here.";
+
+            welcome.append(heading, paragraph);
+
+            elements.messages.appendChild(welcome);
+
+            return;
+        }
+
+        chat.messages.forEach(message => {
+
+            const wrapper = document.createElement("div");
+
+            wrapper.className =
+                "message " +
+                (message.sender === "user"
+                    ? "user-message"
+                    : "assistant-message");
+
+            const content = document.createElement("div");
+
+            content.className = "message-content";
+
+            content.textContent = message.text;
+
+            const time = document.createElement("small");
+
+            time.className = "message-time";
+
+            time.textContent = formatTime(message.time);
+
+            wrapper.append(content, time);
+
+            elements.messages.appendChild(wrapper);
+
+        });
+
+        requestAnimationFrame(() => {
+
+            elements.messages.scrollTop =
+                elements.messages.scrollHeight;
+
+        });
+    }
+
+    // =========================================
+    // 6. COACHING MODES
+    // =========================================
+
+    function updateModes() {
+
+        document.querySelectorAll("[data-coach-mode]")
+            .forEach(button => {
+
+                const selected =
+                    button.dataset.coachMode === activeMode;
+
+                button.classList.toggle("active", selected);
+
+                button.setAttribute(
+                    "aria-pressed",
+                    String(selected)
+                );
+
+            });
+    }
+
+    function selectMode(mode) {
+
+        if (!coachingModes.includes(mode)) return;
+
+        activeMode = mode;
+
+        const chat = getActiveChat();
+
+        if (chat) {
+            chat.mode = mode;
+            chat.updatedAt = Date.now();
+        }
+
+        saveChats();
+        updateModes();
+        renderHistory();
+    }
+
+    // =========================================
+    // 7. SUGGESTIONS VISIBILITY
+    // =========================================
+
+    function updateSuggestions() {
+
+        if (!elements.suggestions || !elements.input) {
+            return;
+        }
+
+        const inputHasText =
+            elements.input.value.trim().length > 0;
+
+        const inputIsFocused =
+            document.activeElement === elements.input;
+
+        const hide =
+            inputHasText || inputIsFocused;
+
+        elements.suggestions.classList.toggle(
+            "suggestions-hidden",
+            hide
+        );
+    }
+
+    // =========================================
+    // 8. MESSAGE INPUT
+    // =========================================
+
+    function resizeInput() {
+
+        if (!elements.input) return;
+
+        elements.input.style.height = "auto";
+
+        elements.input.style.height =
+            Math.min(elements.input.scrollHeight, 110) + "px";
+    }
+
+    function updateSendButton() {
+
+        if (!elements.send || !elements.input) return;
+
+        elements.send.disabled =
+            !elements.input.value.trim();
+    }
+
+    elements.input?.addEventListener("focus", () => {
+        updateSuggestions();
+    });
+
+    elements.input?.addEventListener("input", () => {
+
+        updateSuggestions();
+        resizeInput();
+        updateSendButton();
 
     });
 
-    // =====================================
-    // MOBILE SIDEBAR
-    // =====================================
+    elements.input?.addEventListener("blur", () => {
 
-    if (menuToggle && sidebar) {
+        updateSuggestions();
 
-        menuToggle.addEventListener("click", function () {
+    });
 
-            sidebar.classList.toggle("open");
+    // =========================================
+    // 9. ADD MESSAGE
+    // =========================================
 
-        });
+    function addMessage(sender, text) {
+
+        const chat = getActiveChat();
+
+        if (!chat) return;
+
+        const message = {
+            sender: sender,
+            text: text,
+            time: Date.now()
+        };
+
+        chat.messages.push(message);
+
+        if (
+            sender === "user" &&
+            chat.title === "New conversation"
+        ) {
+
+            chat.title =
+                text.length > 38
+                    ? text.substring(0, 38) + "..."
+                    : text;
+
+        }
+
+        chat.updatedAt = Date.now();
+
+        saveChats();
+
+        renderMessages();
+        renderHistory();
+    }
+
+    // =========================================
+    // 10. SEND MESSAGE
+    // =========================================
+
+    function sendMessage(text) {
+
+        const message = text.trim();
+
+        if (!message) return;
+
+        if (message.length > 3000) {
+
+            alert("Your message is too long.");
+
+            return;
+        }
+
+        addMessage("user", message);
+
+        elements.input.value = "";
+
+        resizeInput();
+        updateSendButton();
+        updateSuggestions();
+
+        /*
+         * AI BACKEND NOT CONNECTED YET.
+         *
+         * This temporary notice prevents the interface
+         * from pretending that an AI response was generated.
+         * No reward credits are deducted.
+         */
+
+        if (elements.send) {
+            elements.send.disabled = true;
+        }
+
+        window.setTimeout(() => {
+
+            addMessage(
+                "assistant",
+                "Your message has been saved. The secure AI service is not connected yet. Once the AI backend is ready, I will be able to respond to your coaching questions. No AI credits have been used."
+            );
+
+            if (elements.send) {
+                elements.send.disabled = false;
+            }
+
+            elements.input?.focus();
+
+        }, 400);
+    }
+
+    elements.form?.addEventListener("submit", event => {
+
+        event.preventDefault();
+
+        sendMessage(elements.input.value);
+
+    });
+
+    // =========================================
+    // 11. SUGGESTED PROMPTS
+    // =========================================
+
+    elements.suggestions?.addEventListener(
+        "click",
+        event => {
+
+            const button = event.target.closest(
+                "[data-coach-prompt]"
+            );
+
+            if (!button) return;
+
+            const prompt = button.dataset.coachPrompt;
+
+            if (!prompt || !elements.input) return;
+
+            elements.input.value = prompt;
+
+            resizeInput();
+            updateSendButton();
+            updateSuggestions();
+
+            elements.input.focus();
+
+        }
+    );
+
+    // =========================================
+    // 12. NEW CONVERSATION
+    // =========================================
+
+    function startNewChat() {
+
+        const chat = createNewChat();
+
+        conversations.unshift(chat);
+
+        activeChatId = chat.id;
+
+        saveChats();
+
+        renderEverything();
+
+        closeSidebar();
+
+        elements.input?.focus();
+    }
+
+    elements.newChat?.addEventListener(
+        "click",
+        startNewChat
+    );
+
+    // =========================================
+    // 13. CLEAR CONVERSATION
+    // =========================================
+
+    elements.clear?.addEventListener("click", () => {
+
+        const chat = getActiveChat();
+
+        if (!chat || chat.messages.length === 0) return;
+
+        if (!confirm(
+            "Clear all messages in this conversation?"
+        )) return;
+
+        chat.messages = [];
+        chat.title = "New conversation";
+        chat.updatedAt = Date.now();
+
+        saveChats();
+
+        renderEverything();
+    });
+
+    // =========================================
+    // 14. MOBILE SIDEBAR
+    // =========================================
+
+    function openSidebar() {
+
+        elements.sidebar?.classList.add("open");
+
+        elements.overlay?.classList.add("active");
 
     }
 
-    // =====================================
-    // CLOSE SIDEBAR WHEN CLICKING OUTSIDE
-    // =====================================
+    function closeSidebar() {
 
-    document.addEventListener("click", function (event) {
+        elements.sidebar?.classList.remove("open");
 
-        if (!sidebar || !menuToggle) return;
+        elements.overlay?.classList.remove("active");
 
-        const clickedInsideSidebar = sidebar.contains(event.target);
-        const clickedMenuButton = menuToggle.contains(event.target);
+    }
 
-        if (
-            window.innerWidth <= 760 &&
-            !clickedInsideSidebar &&
-            !clickedMenuButton
-        ) {
-            sidebar.classList.remove("open");
+    elements.menu?.addEventListener(
+        "click",
+        openSidebar
+    );
+
+    elements.closeSidebar?.addEventListener(
+        "click",
+        closeSidebar
+    );
+
+    elements.overlay?.addEventListener(
+        "click",
+        closeSidebar
+    );
+
+    // =========================================
+    // 15. MODE BUTTONS
+    // =========================================
+
+    document.querySelectorAll("[data-coach-mode]")
+        .forEach(button => {
+
+            button.addEventListener("click", () => {
+
+                selectMode(button.dataset.coachMode);
+
+                closeSidebar();
+
+            });
+
+        });
+
+    // =========================================
+    // 16. LIGHT AND DARK THEMES
+    // =========================================
+
+    function applyTheme(theme) {
+
+        const light = theme === "light";
+
+        document.body.classList.toggle(
+            "light-theme",
+            light
+        );
+
+        localStorage.setItem(
+            THEME_STORAGE,
+            light ? "light" : "dark"
+        );
+
+        if (elements.theme) {
+
+            const icon = light ? "moon" : "sun";
+
+            elements.theme.innerHTML =
+                `<i data-lucide="${icon}"></i>`;
+
+            elements.theme.setAttribute(
+                "aria-label",
+                light
+                    ? "Switch to dark theme"
+                    : "Switch to light theme"
+            );
+
+            refreshIcons();
         }
+    }
+
+    elements.theme?.addEventListener("click", () => {
+
+        const currentlyLight =
+            document.body.classList.contains("light-theme");
+
+        applyTheme(currentlyLight ? "dark" : "light");
 
     });
 
-    // =====================================
-    // INITIALISE
-    // =====================================
+    // =========================================
+    // 17. SUBSCRIPTION DISPLAY
+    // =========================================
 
-    showWelcomeMessage();
+    function updateAccessNotice() {
 
-    console.log("LifeTrack AI Coach interface initialized.");
+        if (elements.plan) {
+            elements.plan.textContent =
+                "Subscription verification pending";
+        }
+
+        if (elements.access) {
+            elements.access.textContent =
+                "Secure AI connection not active";
+        }
+
+        if (elements.creditDescription) {
+            elements.creditDescription.textContent =
+                "AI credit information will appear when connected.";
+        }
+
+        if (elements.creditCount) {
+            elements.creditCount.textContent = "--";
+        }
+    }
+
+    // =========================================
+    // 18. RENDER EVERYTHING
+    // =========================================
+
+    function renderEverything() {
+
+        renderMessages();
+
+        renderHistory();
+
+        updateModes();
+
+        updateSuggestions();
+
+        updateSendButton();
+
+    }
+
+    // =========================================
+    // 19. INITIALIZE
+    // =========================================
+
+    loadChats();
+
+    const savedTheme =
+        localStorage.getItem(THEME_STORAGE) || "dark";
+
+    applyTheme(savedTheme);
+
+    updateAccessNotice();
+
+    renderEverything();
+
+    resizeInput();
+
+    refreshIcons();
+
+    window.addEventListener("lifetrack:ready", () => {
+        updateAccessNotice();
+    });
 
 });
+               
