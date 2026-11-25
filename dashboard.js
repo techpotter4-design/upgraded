@@ -906,3 +906,333 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 
+/* =========================================
+   LIFETRACK — GROWTH JOURNAL
+========================================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+    const $ = (id) => document.getElementById(id);
+
+    const form = $("journalForm");
+    const formCard = $("journalFormCard");
+    const journalList = $("journalList");
+    const titleInput = $("journalTitle");
+    const contentInput = $("journalContent");
+    const message = $("journalMessage");
+
+    if (!form || !journalList) return;
+
+    let entries = [];
+    let activeFilter = "all";
+    let searchTerm = "";
+
+    const prompts = [
+        "What is one thing you're proud of yourself for today?",
+        "What did you learn about yourself today?",
+        "What challenge made you stronger?",
+        "What are three things you're grateful for?",
+        "What would you like to improve tomorrow?",
+        "What is something you need to let go of?",
+        "How have you grown compared to last month?"
+    ];
+
+    function localDate(date = new Date()) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    }
+
+    function showMessage(text, error = false) {
+        if (!message) return;
+        message.textContent = text;
+        message.style.color = error ? "#ff7777" : "#8ee6b0";
+    }
+
+    function openEditor(entry = null) {
+        form.reset();
+        $("journalId").value = entry?.id || "";
+        titleInput.value = entry?.title || "";
+        contentInput.value = entry?.content || "";
+
+        $("journalFormTitle").textContent = entry
+            ? "Edit Your Reflection"
+            : "Create a New Reflection";
+
+        formCard.hidden = false;
+        updateWordCount();
+        formCard.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function closeEditor() {
+        formCard.hidden = true;
+        form.reset();
+        $("journalId").value = "";
+        showMessage("");
+    }
+
+    function updateWordCount() {
+        const words = contentInput.value.trim()
+            ? contentInput.value.trim().split(/\s+/).length
+            : 0;
+
+        $("journalWordCount").textContent =
+            `${words} ${words === 1 ? "word" : "words"}`;
+    }
+
+    function calculateStats() {
+        $("journalEntryCount").textContent = entries.length;
+
+        const today = new Date();
+        const month = today.getMonth();
+        const year = today.getFullYear();
+
+        const thisMonth = entries.filter(entry => {
+            const date = new Date(entry.entry_date + "T00:00:00");
+            return date.getMonth() === month &&
+                   date.getFullYear() === year;
+        });
+
+        $("journalMonthCount").textContent = thisMonth.length;
+
+        const dates = [...new Set(
+            entries.map(entry => entry.entry_date)
+        )].sort().reverse();
+
+        let streak = 0;
+        const checkDate = new Date();
+
+        if (dates[0] !== localDate(checkDate)) {
+            checkDate.setDate(checkDate.getDate() - 1);
+        }
+
+        for (const date of dates) {
+            if (date !== localDate(checkDate)) break;
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+        }
+
+        $("journalStreak").textContent =
+            `${streak} ${streak === 1 ? "day" : "days"}`;
+    }
+
+    function renderEntries() {
+        journalList.replaceChildren();
+
+        let visibleEntries = [...entries];
+
+        if (activeFilter === "recent") {
+            visibleEntries = visibleEntries.slice(0, 7);
+        }
+
+        if (searchTerm) {
+            visibleEntries = visibleEntries.filter(entry =>
+                `${entry.title} ${entry.content}`
+                    .toLowerCase()
+                    .includes(searchTerm)
+            );
+        }
+
+        if (!visibleEntries.length) {
+            const empty = document.createElement("p");
+            empty.className = "empty-message";
+            empty.textContent = entries.length
+                ? "No reflections match your search."
+                : "Your personal reflections will appear here.";
+            journalList.appendChild(empty);
+            return;
+        }
+
+        visibleEntries.forEach(entry => {
+            const card = document.createElement("article");
+            card.className = "journal-entry";
+
+            const heading = document.createElement("h3");
+            heading.textContent = entry.title;
+
+            const date = document.createElement("span");
+            date.className = "journal-entry-date";
+            date.textContent = new Date(
+                entry.entry_date + "T00:00:00"
+            ).toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric"
+            });
+
+            const content = document.createElement("p");
+            content.className = "journal-entry-content";
+            content.textContent = entry.content;
+
+            const actions = document.createElement("div");
+            actions.className = "journal-entry-actions";
+
+            const editButton = document.createElement("button");
+            editButton.type = "button";
+            editButton.textContent = "Edit";
+            editButton.dataset.action = "edit";
+            editButton.dataset.id = entry.id;
+
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.textContent = "Delete";
+            deleteButton.dataset.action = "delete";
+            deleteButton.dataset.id = entry.id;
+
+            actions.append(editButton, deleteButton);
+            card.append(heading, date, content, actions);
+            journalList.appendChild(card);
+        });
+    }
+
+    async function loadEntries() {
+        const state = window.LifeTrack;
+        if (!state?.db || !state.user) return;
+
+        const { data, error } = await state.db
+            .from("journal_entries")
+            .select("*")
+            .eq("user_id", state.user.id)
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            console.error("Journal loading error:", error);
+            showMessage("Unable to load your reflections.", true);
+            return;
+        }
+
+        entries = data || [];
+        calculateStats();
+        renderEntries();
+    }
+
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const state = window.LifeTrack;
+        if (!state?.db || !state.user) {
+            showMessage("Please wait for your account to load.", true);
+            return;
+        }
+
+        const title = titleInput.value.trim();
+        const content = contentInput.value.trim();
+        const id = $("journalId").value;
+
+        if (!title || !content) {
+            showMessage("Please complete both fields.", true);
+            return;
+        }
+
+        const saveButton = $("saveJournalButton");
+        saveButton.disabled = true;
+        showMessage("Saving your reflection...");
+
+        const record = {
+            user_id: state.user.id,
+            title,
+            content,
+            entry_date: localDate()
+        };
+
+        const result = id
+            ? await state.db.from("journal_entries")
+                .update(record)
+                .eq("id", id)
+                .eq("user_id", state.user.id)
+            : await state.db.from("journal_entries")
+                .insert(record);
+
+        saveButton.disabled = false;
+
+        if (result.error) {
+            console.error("Journal save error:", result.error);
+            showMessage("Could not save. Please try again.", true);
+            return;
+        }
+
+        showMessage("Your reflection has been saved!");
+        closeEditor();
+        await loadEntries();
+    });
+
+    journalList.addEventListener("click", async event => {
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+
+        const entry = entries.find(item =>
+            String(item.id) === button.dataset.id
+        );
+
+        if (!entry) return;
+
+        if (button.dataset.action === "edit") {
+            openEditor(entry);
+        }
+
+        if (button.dataset.action === "delete") {
+            if (!confirm("Delete this reflection permanently?")) return;
+
+            const { error } = await window.LifeTrack.db
+                .from("journal_entries")
+                .delete()
+                .eq("id", entry.id)
+                .eq("user_id", window.LifeTrack.user.id);
+
+            if (error) {
+                console.error(error);
+                showMessage("Unable to delete this reflection.", true);
+                return;
+            }
+
+            await loadEntries();
+        }
+    });
+
+    $("addJournalButton")?.addEventListener("click", () => openEditor());
+    $("closeJournalButton")?.addEventListener("click", closeEditor);
+    $("cancelJournalButton")?.addEventListener("click", closeEditor);
+
+    contentInput.addEventListener("input", updateWordCount);
+
+    $("journalSearch")?.addEventListener("input", event => {
+        searchTerm = event.target.value.toLowerCase().trim();
+        renderEntries();
+    });
+
+    document.querySelectorAll("[data-journal-filter]").forEach(button => {
+        button.addEventListener("click", () => {
+            activeFilter = button.dataset.journalFilter;
+
+            document.querySelectorAll("[data-journal-filter]")
+                .forEach(item => item.classList.remove("active"));
+
+            button.classList.add("active");
+            renderEntries();
+        });
+    });
+
+    document.querySelectorAll("[data-journal-prompt]").forEach(button => {
+        button.addEventListener("click", () => {
+            contentInput.value +=
+                (contentInput.value ? "\n\n" : "") +
+                button.dataset.journalPrompt + "\n";
+            updateWordCount();
+            contentInput.focus();
+        });
+    });
+
+    $("newJournalPrompt")?.addEventListener("click", () => {
+        const prompt = prompts[
+            Math.floor(Math.random() * prompts.length)
+        ];
+        $("journalDailyPrompt").textContent = prompt;
+    });
+
+    document.addEventListener("lifetrack:ready", loadEntries);
+
+    if (window.LifeTrack?.user) {
+        loadEntries();
+    }
+});
+            
