@@ -955,4 +955,153 @@ body.sidebar-collapsed .sidebar-profile {
     display: none !important;
 }
 
+/* =================================
+   MOOD TRACKER
+================================= */
+
+.mood-checkin-card,
+.mood-history-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 25px;
+    margin-bottom: 24px;
+}
+
+.mood-card-heading {
+    margin-bottom: 25px;
+}
+
+.mood-card-heading h3,
+.mood-history-card h3 {
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+.mood-card-heading p,
+.mood-history-card p {
+    color: var(--text-secondary);
+}
+
+.mood-options {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin: 25px 0;
+}
+
+.mood-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 8px;
+    background: rgba(255,255,255,.025);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: .2s ease;
+    text-align: center;
+}
+
+.mood-option:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary);
+}
+
+.mood-option:has(input:checked) {
+    border-color: var(--primary);
+    background: rgba(139,92,246,.14);
+}
+
+.mood-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.mood-icon {
+    width: 45px;
+    height: 45px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(139,92,246,.15);
+    color: var(--primary-light);
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.mood-option strong {
+    font-size: 12px;
+}
+
+#moodForm > label {
+    display: block;
+    margin: 18px 0 8px;
+    font-weight: 600;
+}
+
+#moodNote {
+    width: 100%;
+    padding: 14px;
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-main);
+    resize: vertical;
+    outline: none;
+}
+
+#moodNote:focus {
+    border-color: var(--primary);
+}
+
+#moodForm .primary-button {
+    margin-top: 18px;
+}
+
+#moodMessage {
+    margin-top: 12px;
+    color: var(--text-secondary);
+}
+
+.mood-history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.mood-history-item:last-child {
+    border-bottom: none;
+}
+
+.mood-history-item strong {
+    display: block;
+    text-transform: capitalize;
+}
+
+.mood-history-item span {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+@media (max-width: 600px) {
+    .mood-options {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mood-option:last-child {
+        grid-column: span 2;
+    }
+
+    .mood-checkin-card,
+    .mood-history-card {
+        padding: 17px;
+    }
+}
+
        
