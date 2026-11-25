@@ -1235,4 +1235,397 @@ document.addEventListener("DOMContentLoaded", () => {
         loadEntries();
     }
 });
-            
+
+/* =========================================
+   LIFETRACK — GOALS MANAGER
+========================================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+    const $ = id => document.getElementById(id);
+
+    const form = $("goalForm");
+    const goalList = $("goalList");
+    const formCard = $("goalFormCard");
+
+    if (!form || !goalList) return;
+
+    let goals = [];
+    let activeFilter = "all";
+    let searchTerm = "";
+
+    function showMessage(text, error = false) {
+        const element = $("goalMessage");
+        if (!element) return;
+
+        element.textContent = text;
+        element.style.color = error ? "#ff7777" : "#8ee6b0";
+    }
+
+    function openForm(goal = null) {
+        form.reset();
+
+        $("goalId").value = goal?.id || "";
+        $("goalTitle").value = goal?.title || "";
+        $("goalDescription").value = goal?.description || "";
+        $("goalDeadline").value = goal?.target_date || "";
+        $("goalPriority").value = goal?.priority || "medium";
+        $("goalProgressInput").value = goal?.progress ?? 0;
+
+        $("goalProgressField").hidden = !goal;
+
+        $("goalFormTitle").textContent = goal
+            ? "Update Your Goal"
+            : "Create a New Goal";
+
+        formCard.hidden = false;
+        showMessage("");
+
+        formCard.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function closeForm() {
+        formCard.hidden = true;
+        form.reset();
+        $("goalId").value = "";
+        $("goalProgressField").hidden = true;
+        showMessage("");
+    }
+
+    function calculateStats() {
+        const total = goals.length;
+        const completed = goals.filter(
+            goal => goal.status === "completed"
+        ).length;
+
+        const active = total - completed;
+
+        const average = total
+            ? Math.round(
+                goals.reduce(
+                    (sum, goal) => sum + Number(goal.progress || 0), 0
+                ) / total
+            )
+            : 0;
+
+        $("goalTotal").textContent = total;
+        $("goalActive").textContent = active;
+        $("goalCompleted").textContent = completed;
+        $("goalAverage").textContent = `${average}%`;
+    }
+
+    function createGoalCard(goal) {
+        const card = document.createElement("article");
+        card.className = "goal-item";
+
+        const heading = document.createElement("div");
+        heading.className = "goal-item-heading";
+
+        const title = document.createElement("h3");
+        title.textContent = goal.title;
+
+        const status = document.createElement("span");
+        status.className = "goal-status";
+        status.textContent = goal.status === "completed"
+            ? "Completed"
+            : "In Progress";
+
+        heading.append(title, status);
+
+        const description = document.createElement("p");
+        description.className = "goal-description";
+        description.textContent = goal.description || "No description added.";
+
+        const progressArea = document.createElement("div");
+        progressArea.className = "goal-progress-area";
+
+        const progressHeading = document.createElement("div");
+        progressHeading.className = "goal-progress-heading";
+
+        const progressLabel = document.createElement("span");
+        progressLabel.textContent = "Your progress";
+
+        const progressValue = document.createElement("strong");
+        const progress = Math.min(
+            100,
+            Math.max(0, Number(goal.progress) || 0)
+        );
+
+        progressValue.textContent = `${progress}%`;
+
+        progressHeading.append(progressLabel, progressValue);
+
+        const track = document.createElement("div");
+        track.className = "goal-progress-track";
+
+        const fill = document.createElement("div");
+        fill.className = "goal-progress-fill";
+        fill.style.width = `${progress}%`;
+
+        track.appendChild(fill);
+        progressArea.append(progressHeading, track);
+
+        const meta = document.createElement("div");
+        meta.className = "goal-meta";
+
+        const priority = document.createElement("span");
+        priority.textContent =
+            `Priority: ${goal.priority || "medium"}`;
+
+        const deadline = document.createElement("span");
+        deadline.textContent = goal.target_date
+            ? `Target: ${new Date(
+                goal.target_date + "T00:00:00"
+            ).toLocaleDateString("en-US")}`
+            : "No deadline";
+
+        meta.append(priority, deadline);
+
+        const actions = document.createElement("div");
+        actions.className = "goal-actions";
+
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.textContent = "Edit";
+        edit.dataset.action = "edit";
+        edit.dataset.id = goal.id;
+
+        const complete = document.createElement("button");
+        complete.type = "button";
+        complete.textContent = goal.status === "completed"
+            ? "Reopen"
+            : "Complete";
+        complete.dataset.action = "complete";
+        complete.dataset.id = goal.id;
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "Delete";
+        remove.dataset.action = "delete";
+        remove.dataset.id = goal.id;
+
+        actions.append(edit, complete, remove);
+
+        card.append(
+            heading,
+            description,
+            progressArea,
+            meta,
+            actions
+        );
+
+        return card;
+    }
+
+    function renderGoals() {
+        goalList.replaceChildren();
+
+        let visible = [...goals];
+
+        if (activeFilter === "active") {
+            visible = visible.filter(
+                goal => goal.status !== "completed"
+            );
+        }
+
+        if (activeFilter === "completed") {
+            visible = visible.filter(
+                goal => goal.status === "completed"
+            );
+        }
+
+        if (searchTerm) {
+            visible = visible.filter(goal =>
+                `${goal.title} ${goal.description || ""}`
+                    .toLowerCase()
+                    .includes(searchTerm)
+            );
+        }
+
+        if (!visible.length) {
+            const empty = document.createElement("p");
+            empty.className = "empty-message";
+            empty.textContent = goals.length
+                ? "No goals match your search or filter."
+                : "Your goals will appear here. Create your first goal!";
+            goalList.appendChild(empty);
+            return;
+        }
+
+        visible.forEach(goal => {
+            goalList.appendChild(createGoalCard(goal));
+        });
+    }
+
+    async function loadGoals() {
+        const state = window.LifeTrack;
+        if (!state?.db || !state.user) return;
+
+        const { data, error } = await state.db
+            .from("goals")
+            .select("*")
+            .eq("user_id", state.user.id)
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            console.error("Goals loading error:", error);
+            showMessage("Unable to load your goals.", true);
+            return;
+        }
+
+        goals = data || [];
+
+        calculateStats();
+        renderGoals();
+    }
+
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+
+        const state = window.LifeTrack;
+        if (!state?.db || !state.user) {
+            showMessage("Please wait for your account to load.", true);
+            return;
+        }
+
+        const id = $("goalId").value;
+        const title = $("goalTitle").value.trim();
+        const description = $("goalDescription").value.trim();
+        const targetDate = $("goalDeadline").value;
+        const priority = $("goalPriority").value;
+
+        const progress = id
+            ? Math.min(100, Math.max(
+                0,
+                Number($("goalProgressInput").value) || 0
+            ))
+            : 0;
+
+        if (!title) {
+            showMessage("Please enter a goal title.", true);
+            return;
+        }
+
+        const record = {
+            user_id: state.user.id,
+            title,
+            description,
+            target_date: targetDate || null,
+            progress,
+            status: progress === 100 ? "completed" : "active"
+        };
+
+        // Only include priority if the database has this column.
+        // Remove this property if your goals table does not have it.
+        record.priority = priority;
+
+        const saveButton = $("saveGoalButton");
+        saveButton.disabled = true;
+        showMessage("Saving your goal...");
+
+        const result = id
+            ? await state.db.from("goals")
+                .update(record)
+                .eq("id", id)
+                .eq("user_id", state.user.id)
+            : await state.db.from("goals").insert(record);
+
+        saveButton.disabled = false;
+
+        if (result.error) {
+            console.error("Goal save error:", result.error);
+            showMessage(
+                "Could not save your goal. Check the database columns.",
+                true
+            );
+            return;
+        }
+
+        closeForm();
+        await loadGoals();
+    });
+
+    goalList.addEventListener("click", async event => {
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+
+        const goal = goals.find(item =>
+            String(item.id) === button.dataset.id
+        );
+
+        if (!goal) return;
+
+        const state = window.LifeTrack;
+
+        if (button.dataset.action === "edit") {
+            openForm(goal);
+            return;
+        }
+
+        if (button.dataset.action === "delete") {
+            if (!confirm("Permanently delete this goal?")) return;
+
+            const { error } = await state.db
+                .from("goals")
+                .delete()
+                .eq("id", goal.id)
+                .eq("user_id", state.user.id);
+
+            if (error) {
+                console.error(error);
+                showMessage("Unable to delete this goal.", true);
+                return;
+            }
+
+            await loadGoals();
+        }
+
+        if (button.dataset.action === "complete") {
+            const completed = goal.status !== "completed";
+
+            const { error } = await state.db
+                .from("goals")
+                .update({
+                    status: completed ? "completed" : "active",
+                    progress: completed ? 100 : 0
+                })
+                .eq("id", goal.id)
+                .eq("user_id", state.user.id);
+
+            if (error) {
+                console.error(error);
+                showMessage("Unable to update goal status.", true);
+                return;
+            }
+
+            await loadGoals();
+        }
+    });
+
+    $("addGoalButton")?.addEventListener("click", () => openForm());
+    $("closeGoalButton")?.addEventListener("click", closeForm);
+    $("cancelGoalButton")?.addEventListener("click", closeForm);
+
+    $("goalSearch")?.addEventListener("input", event => {
+        searchTerm = event.target.value.toLowerCase().trim();
+        renderGoals();
+    });
+
+    document.querySelectorAll("[data-goal-filter]").forEach(button => {
+        button.addEventListener("click", () => {
+            activeFilter = button.dataset.goalFilter;
+
+            document.querySelectorAll("[data-goal-filter]")
+                .forEach(item => item.classList.remove("active"));
+
+            button.classList.add("active");
+            renderGoals();
+        });
+    });
+
+    document.addEventListener("lifetrack:ready", loadGoals);
+
+    if (window.LifeTrack?.user) {
+        loadGoals();
+    }
+});
+                          
