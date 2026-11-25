@@ -950,5 +950,9 @@ body.sidebar-collapsed .sidebar-profile {
         align-items: flex-start;
     }
    }
+/* Ensure hidden elements stay hidden */
+[hidden] {
+    display: none !important;
+}
 
        
