@@ -1,264 +1,243 @@
 
-/* ============================================
+/* ==========================================
    LIFETRACK AI COACH V2
-   COMPLETE FRONTEND JAVASCRIPT
-============================================ */
+   Conversation and interface controller
+========================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    "use strict";
-
-    // =========================================
-    // 1. ELEMENTS
-    // =========================================
-
-    const $ = (id) => document.getElementById(id);
+    // ======================================
+    // ELEMENTS
+    // ======================================
 
     const elements = {
-        app: $("coachApp"),
-        sidebar: $("coachSidebar"),
-        overlay: $("sidebarOverlay"),
-        menu: $("coachMenuToggle"),
-        closeSidebar: $("sidebarCloseButton"),
+        sidebar: document.getElementById("coachSidebar"),
+        overlay: document.getElementById("sidebarOverlay"),
+        menuButton: document.getElementById("coachMenuToggle"),
+        closeSidebar: document.getElementById("sidebarCloseButton"),
 
-        newChat: $("newChatButton"),
-        history: $("chatHistoryList"),
+        newChatButton: document.getElementById("newChatButton"),
+        historyList: document.getElementById("chatHistoryList"),
 
-        theme: $("themeToggle"),
-        clear: $("clearChatButton"),
+        chatMessages: document.getElementById("chatMessages"),
+        suggestions: document.getElementById("coachSuggestions"),
 
-        messages: $("chatMessages"),
-        typing: $("typingIndicator"),
+        form: document.getElementById("coachChatForm"),
+        input: document.getElementById("coachMessage"),
+        sendButton: document.getElementById("coachSendButton"),
 
-        form: $("coachChatForm"),
-        input: $("coachMessage"),
-        send: $("coachSendButton"),
+        typing: document.getElementById("typingIndicator"),
 
-        suggestions: $("coachSuggestions"),
+        themeButton: document.getElementById("themeToggle"),
+        clearButton: document.getElementById("clearChatButton"),
 
-        plan: $("coachPlanName"),
-        access: $("coachAccessStatus"),
-
-        creditDescription: $("coachCreditDescription"),
-        creditCount: $("coachCreditCount")
+        planName: document.getElementById("coachPlanName"),
+        accessStatus: document.getElementById("coachAccessStatus"),
+        creditDescription: document.getElementById("coachCreditDescription"),
+        creditCount: document.getElementById("coachCreditCount")
     };
 
-    // =========================================
-    // 2. STORAGE
-    // =========================================
+    // ======================================
+    // STORAGE
+    // ======================================
 
     const CHAT_STORAGE = "lifetrack_coach_v2_chats";
     const THEME_STORAGE = "lifetrack_coach_v2_theme";
 
-    let conversations = [];
+    let chats = [];
     let activeChatId = null;
-    let activeMode = "general";
 
-    const coachingModes = [
-        "general",
-        "habits",
-        "mood",
-        "goals",
-        "routine"
-    ];
+    // ======================================
+    // HELPERS
+    // ======================================
 
-    // =========================================
-    // 3. HELPERS
-    // =========================================
-
-    function generateId() {
+    function createId() {
         return Date.now().toString(36) +
-            Math.random().toString(36).slice(2, 9);
-    }
-
-    function getActiveChat() {
-        return conversations.find(
-            chat => chat.id === activeChatId
-        );
-    }
-
-    function createNewChat() {
-        return {
-            id: generateId(),
-            title: "New conversation",
-            mode: activeMode,
-            messages: [],
-            updatedAt: Date.now()
-        };
+            Math.random().toString(36).slice(2, 8);
     }
 
     function saveChats() {
         try {
             localStorage.setItem(
                 CHAT_STORAGE,
-                JSON.stringify(conversations)
+                JSON.stringify(chats)
             );
         } catch (error) {
-            console.error("Could not save chat history:", error);
+            console.error("Could not save conversations:", error);
         }
+    }
+
+    function getActiveChat() {
+        return chats.find(chat => chat.id === activeChatId);
     }
 
     function loadChats() {
         try {
-            const saved = JSON.parse(
-                localStorage.getItem(CHAT_STORAGE) || "[]"
-            );
+            const saved = localStorage.getItem(CHAT_STORAGE);
+            const parsed = saved ? JSON.parse(saved) : [];
 
-            conversations = Array.isArray(saved)
-                ? saved.filter(chat =>
+            chats = Array.isArray(parsed)
+                ? parsed.filter(chat =>
                     chat &&
                     typeof chat.id === "string" &&
                     Array.isArray(chat.messages)
                 )
                 : [];
 
+            // Preserve compatibility with earlier saved chats.
+            chats.forEach(chat => {
+                if (typeof chat.showSuggestions !== "boolean") {
+                    chat.showSuggestions = chat.messages.length === 0;
+                }
+            });
+
         } catch (error) {
-            conversations = [];
+            console.error("Could not load conversations:", error);
+            chats = [];
         }
+    }
 
-        if (conversations.length === 0) {
-            const chat = createNewChat();
+    // ======================================
+    // CONVERSATION CREATION
+    // ======================================
 
-            conversations.push(chat);
-            activeChatId = chat.id;
+    function createNewConversation() {
 
-        } else {
-            activeChatId = conversations[0].id;
-            activeMode = conversations[0].mode || "general";
-        }
+        const chat = {
+            id: createId(),
+            title: "New conversation",
+            messages: [],
+            mode: "general",
+            showSuggestions: true,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
+
+        chats.unshift(chat);
+
+        activeChatId = chat.id;
 
         saveChats();
-    }
 
-    function formatTime(timestamp) {
-        return new Date(timestamp).toLocaleTimeString([], {
-            hour: "numeric",
-            minute: "2-digit"
-        });
-    }
+        renderHistory();
+        renderMessages();
+        updateSuggestions();
 
-    function refreshIcons() {
-        if (window.lucide) {
-            window.lucide.createIcons();
+        closeSidebar();
+
+        if (elements.input) {
+            elements.input.value = "";
+            elements.input.style.height = "auto";
         }
+
+        return chat;
     }
 
-    // =========================================
-    // 4. CHAT HISTORY
-    // =========================================
+    // ======================================
+    // CONVERSATION TITLES
+    // ======================================
+
+    function updateChatTitle(chat) {
+
+        if (!chat || chat.messages.length === 0) {
+            return;
+        }
+
+        const firstMessage = chat.messages.find(
+            message => message.role === "user"
+        );
+
+        if (!firstMessage) return;
+
+        const title = firstMessage.content
+            .replace(/\s+/g, " ")
+            .trim();
+
+        chat.title = title.length > 42
+            ? title.slice(0, 42) + "..."
+            : title;
+    }
+
+    // ======================================
+    // HISTORY
+    // ======================================
 
     function renderHistory() {
 
-        if (!elements.history) return;
+        if (!elements.historyList) return;
 
-        elements.history.replaceChildren();
+        elements.historyList.innerHTML = "";
 
-        const sortedChats = [...conversations].sort(
-            (a, b) => b.updatedAt - a.updatedAt
-        );
-
-        if (sortedChats.length === 0) {
+        if (chats.length === 0) {
 
             const empty = document.createElement("div");
-
             empty.className = "history-empty";
             empty.textContent =
                 "Your conversations will appear here.";
 
-            elements.history.appendChild(empty);
-
+            elements.historyList.appendChild(empty);
             return;
         }
 
-        sortedChats.forEach(chat => {
+        chats.forEach(chat => {
 
-            const item = document.createElement("div");
+            const button = document.createElement("button");
 
-            item.className = "history-item";
+            button.type = "button";
+            button.className = "history-item";
 
             if (chat.id === activeChatId) {
-                item.classList.add("active");
+                button.classList.add("active");
             }
 
-            const openButton = document.createElement("button");
+            button.textContent = chat.title || "New conversation";
+            button.title = chat.title || "New conversation";
 
-            openButton.type = "button";
-            openButton.className = "history-open";
-            openButton.textContent = chat.title || "New conversation";
-            openButton.title = chat.title || "New conversation";
-
-            openButton.addEventListener("click", () => {
-
-                activeChatId = chat.id;
-                activeMode = chat.mode || "general";
-
-                renderEverything();
-                closeSidebar();
-
+            button.addEventListener("click", () => {
+                openConversation(chat.id);
             });
 
-            const deleteButton = document.createElement("button");
-
-            deleteButton.type = "button";
-            deleteButton.className = "history-action";
-            deleteButton.textContent = "×";
-            deleteButton.setAttribute(
-                "aria-label",
-                "Delete conversation"
-            );
-
-            deleteButton.addEventListener("click", event => {
-
-                event.stopPropagation();
-
-                if (!confirm(
-                    "Are you sure you want to delete this conversation?"
-                )) return;
-
-                conversations = conversations.filter(
-                    item => item.id !== chat.id
-                );
-
-                if (activeChatId === chat.id) {
-
-                    if (conversations.length === 0) {
-
-                        const newChat = createNewChat();
-
-                        conversations.push(newChat);
-                        activeChatId = newChat.id;
-
-                    } else {
-
-                        activeChatId = conversations[0].id;
-                        activeMode =
-                            conversations[0].mode || "general";
-                    }
-                }
-
-                saveChats();
-                renderEverything();
-
-            });
-
-            item.append(openButton, deleteButton);
-
-            elements.history.appendChild(item);
-
+            elements.historyList.appendChild(button);
         });
     }
 
-    // =========================================
-    // 5. RENDER MESSAGES
-    // =========================================
+    // ======================================
+    // OPEN EXISTING CONVERSATION
+    // ======================================
+
+    function openConversation(id) {
+
+        const chat = chats.find(item => item.id === id);
+
+        if (!chat) return;
+
+        activeChatId = id;
+
+        saveChats();
+
+        renderHistory();
+        renderMessages();
+        updateSuggestions();
+
+        closeSidebar();
+
+        if (elements.input) {
+            elements.input.value = "";
+            elements.input.style.height = "auto";
+        }
+    }
+
+    // ======================================
+    // RENDER MESSAGES
+    // ======================================
 
     function renderMessages() {
 
-        if (!elements.messages) return;
-
-        elements.messages.replaceChildren();
+        if (!elements.chatMessages) return;
 
         const chat = getActiveChat();
+
+        elements.chatMessages.innerHTML = "";
 
         if (!chat) return;
 
@@ -269,125 +248,205 @@ document.addEventListener("DOMContentLoaded", () => {
             welcome.className = "welcome-message";
 
             const heading = document.createElement("h2");
-
-            heading.textContent = "Let's make progress.";
+            heading.textContent = "Your growth starts here.";
 
             const paragraph = document.createElement("p");
-
             paragraph.textContent =
-                "Tell me what you would like to improve today. Your growth journey starts here.";
+                "I'm here to help you build better habits, " +
+                "understand your emotions, and make progress " +
+                "toward your goals.";
 
-            welcome.append(heading, paragraph);
+            welcome.appendChild(heading);
+            welcome.appendChild(paragraph);
 
-            elements.messages.appendChild(welcome);
+            elements.chatMessages.appendChild(welcome);
 
-            return;
+        } else {
+
+            chat.messages.forEach(message => {
+
+                const messageRow = document.createElement("div");
+
+                messageRow.className =
+                    message.role === "user"
+                        ? "message user"
+                        : "message assistant";
+
+                const content = document.createElement("div");
+
+                content.className = "message-content";
+
+                // Safe text rendering.
+                content.textContent = message.content;
+
+                messageRow.appendChild(content);
+
+                elements.chatMessages.appendChild(messageRow);
+            });
         }
 
-        chat.messages.forEach(message => {
+        scrollToBottom();
+    }
 
-            const wrapper = document.createElement("div");
+    function scrollToBottom() {
 
-            wrapper.className =
-                "message " +
-                (message.sender === "user"
-                    ? "user-message"
-                    : "assistant-message");
-
-            const content = document.createElement("div");
-
-            content.className = "message-content";
-
-            content.textContent = message.text;
-
-            const time = document.createElement("small");
-
-            time.className = "message-time";
-
-            time.textContent = formatTime(message.time);
-
-            wrapper.append(content, time);
-
-            elements.messages.appendChild(wrapper);
-
-        });
+        if (!elements.chatMessages) return;
 
         requestAnimationFrame(() => {
-
-            elements.messages.scrollTop =
-                elements.messages.scrollHeight;
-
+            elements.chatMessages.scrollTop =
+                elements.chatMessages.scrollHeight;
         });
     }
 
-    // =========================================
-    // 6. COACHING MODES
-    // =========================================
-
-    function updateModes() {
-
-        document.querySelectorAll("[data-coach-mode]")
-            .forEach(button => {
-
-                const selected =
-                    button.dataset.coachMode === activeMode;
-
-                button.classList.toggle("active", selected);
-
-                button.setAttribute(
-                    "aria-pressed",
-                    String(selected)
-                );
-
-            });
-    }
-
-    function selectMode(mode) {
-
-        if (!coachingModes.includes(mode)) return;
-
-        activeMode = mode;
-
-        const chat = getActiveChat();
-
-        if (chat) {
-            chat.mode = mode;
-            chat.updatedAt = Date.now();
-        }
-
-        saveChats();
-        updateModes();
-        renderHistory();
-    }
-
-    // =========================================
-    // 7. SUGGESTIONS VISIBILITY
-    // =========================================
+    // ======================================
+    // SUGGESTION VISIBILITY
+    // ======================================
 
     function updateSuggestions() {
 
-        if (!elements.suggestions || !elements.input) {
-            return;
-        }
+        if (!elements.suggestions) return;
 
-        const inputHasText =
-            elements.input.value.trim().length > 0;
+        const chat = getActiveChat();
 
-        const inputIsFocused =
-            document.activeElement === elements.input;
-
-        const hide =
-            inputHasText || inputIsFocused;
+        const shouldShow =
+            chat &&
+            chat.showSuggestions === true &&
+            chat.messages.length === 0;
 
         elements.suggestions.classList.toggle(
             "suggestions-hidden",
-            hide
+            !shouldShow
         );
     }
 
-    // =========================================
-    // 8. MESSAGE INPUT
-    // =========================================
+    function hideSuggestions() {
+
+        const chat = getActiveChat();
+
+        if (!chat || !chat.showSuggestions) return;
+
+        chat.showSuggestions = false;
+
+        saveChats();
+
+        updateSuggestions();
+    }
+
+    // ======================================
+    // MESSAGE CREATION
+    // ======================================
+
+    function addMessage(role, content) {
+
+        const chat = getActiveChat();
+
+        if (!chat) return;
+
+        chat.messages.push({
+            role,
+            content,
+            createdAt: Date.now()
+        });
+
+        chat.updatedAt = Date.now();
+
+        // Once a conversation has a message,
+        // suggestions must remain hidden.
+        chat.showSuggestions = false;
+
+        updateChatTitle(chat);
+
+        saveChats();
+
+        renderMessages();
+        renderHistory();
+        updateSuggestions();
+    }
+
+    // ======================================
+    // SEND MESSAGE
+    // ======================================
+
+    function sendMessage(content) {
+
+        const message = content.trim();
+
+        if (!message) return;
+
+        const chat = getActiveChat();
+
+        if (!chat) return;
+
+        hideSuggestions();
+
+        addMessage("user", message);
+
+        elements.input.value = "";
+        elements.input.style.height = "auto";
+
+        elements.sendButton.disabled = true;
+
+        // No real AI connection yet.
+        // This notice does not consume credits.
+
+        showTyping(true);
+
+        setTimeout(() => {
+
+            showTyping(false);
+
+            addMessage(
+                "assistant",
+                "Your message has been saved in this conversation. " +
+                "The secure AI service is not connected yet, so I " +
+                "can't generate a real AI response at the moment. " +
+                "No AI question credits have been used."
+            );
+
+            elements.sendButton.disabled = false;
+
+            elements.input.focus();
+
+        }, 700);
+    }
+
+    // ======================================
+    // TYPING INDICATOR
+    // ======================================
+
+    function showTyping(show) {
+
+        if (!elements.typing) return;
+
+        elements.typing.hidden = !show;
+    }
+
+    // ======================================
+    // SUGGESTION BUTTONS
+    // ======================================
+
+    document.querySelectorAll("[data-coach-prompt]")
+        .forEach(button => {
+
+            button.addEventListener("click", () => {
+
+                const prompt = button.dataset.coachPrompt;
+
+                if (!prompt || !elements.input) return;
+
+                hideSuggestions();
+
+                elements.input.value = prompt;
+
+                resizeInput();
+
+                sendMessage(prompt);
+            });
+        });
+
+    // ======================================
+    // INPUT BEHAVIOR
+    // ======================================
 
     function resizeInput() {
 
@@ -399,230 +458,135 @@ document.addEventListener("DOMContentLoaded", () => {
             Math.min(elements.input.scrollHeight, 110) + "px";
     }
 
-    function updateSendButton() {
+    if (elements.input) {
 
-        if (!elements.send || !elements.input) return;
+        // Hide suggestions immediately when the
+        // user chooses to type independently.
+        elements.input.addEventListener("focus", () => {
+            hideSuggestions();
+        });
 
-        elements.send.disabled =
-            !elements.input.value.trim();
+        elements.input.addEventListener("click", () => {
+            hideSuggestions();
+        });
+
+        elements.input.addEventListener("input", () => {
+
+            hideSuggestions();
+
+            resizeInput();
+        });
+
+        elements.input.addEventListener("keydown", event => {
+
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+                event.preventDefault();
+
+                if (elements.form.requestSubmit) {
+                    elements.form.requestSubmit();
+                } else {
+                    sendMessage(elements.input.value);
+                }
+            }
+        });
     }
 
-    elements.input?.addEventListener("focus", () => {
-        updateSuggestions();
-    });
+    // ======================================
+    // FORM SUBMISSION
+    // ======================================
 
-    elements.input?.addEventListener("input", () => {
+    if (elements.form) {
 
-        updateSuggestions();
-        resizeInput();
-        updateSendButton();
+        elements.form.addEventListener("submit", event => {
 
-    });
+            event.preventDefault();
 
-    elements.input?.addEventListener("blur", () => {
+            if (elements.sendButton.disabled) return;
 
-        updateSuggestions();
+            sendMessage(elements.input.value);
+        });
+    }
 
-    });
+    // ======================================
+    // NEW CONVERSATION BUTTON
+    // ======================================
 
-    // =========================================
-    // 9. ADD MESSAGE
-    // =========================================
+    if (elements.newChatButton) {
 
-    function addMessage(sender, text) {
+        elements.newChatButton.addEventListener("click", () => {
+            createNewConversation();
+        });
+    }
+
+    // ======================================
+    // COACHING MODES
+    // ======================================
+
+    document.querySelectorAll("[data-coach-mode]")
+        .forEach(button => {
+
+            button.addEventListener("click", () => {
+
+                const chat = getActiveChat();
+
+                if (!chat) return;
+
+                const mode = button.dataset.coachMode;
+
+                chat.mode = mode;
+
+                saveChats();
+
+                document.querySelectorAll("[data-coach-mode]")
+                    .forEach(item => {
+                        item.classList.toggle(
+                            "active",
+                            item === button
+                        );
+                    });
+
+                // Selecting a mode is a conversation choice,
+                // not a sent message. Suggestions remain visible
+                // until the user focuses the message input.
+            });
+        });
+
+    function restoreMode() {
 
         const chat = getActiveChat();
 
         if (!chat) return;
 
-        const message = {
-            sender: sender,
-            text: text,
-            time: Date.now()
-        };
+        document.querySelectorAll("[data-coach-mode]")
+            .forEach(button => {
 
-        chat.messages.push(message);
-
-        if (
-            sender === "user" &&
-            chat.title === "New conversation"
-        ) {
-
-            chat.title =
-                text.length > 38
-                    ? text.substring(0, 38) + "..."
-                    : text;
-
-        }
-
-        chat.updatedAt = Date.now();
-
-        saveChats();
-
-        renderMessages();
-        renderHistory();
+                button.classList.toggle(
+                    "active",
+                    button.dataset.coachMode === chat.mode
+                );
+            });
     }
 
-    // =========================================
-    // 10. SEND MESSAGE
-    // =========================================
-
-    function sendMessage(text) {
-
-        const message = text.trim();
-
-        if (!message) return;
-
-        if (message.length > 3000) {
-
-            alert("Your message is too long.");
-
-            return;
-        }
-
-        addMessage("user", message);
-
-        elements.input.value = "";
-
-        resizeInput();
-        updateSendButton();
-        updateSuggestions();
-
-        /*
-         * AI BACKEND NOT CONNECTED YET.
-         *
-         * This temporary notice prevents the interface
-         * from pretending that an AI response was generated.
-         * No reward credits are deducted.
-         */
-
-        if (elements.send) {
-            elements.send.disabled = true;
-        }
-
-        window.setTimeout(() => {
-
-            addMessage(
-                "assistant",
-                "Your message has been saved. The secure AI service is not connected yet. Once the AI backend is ready, I will be able to respond to your coaching questions. No AI credits have been used."
-            );
-
-            if (elements.send) {
-                elements.send.disabled = false;
-            }
-
-            elements.input?.focus();
-
-        }, 400);
-    }
-
-    elements.form?.addEventListener("submit", event => {
-
-        event.preventDefault();
-
-        sendMessage(elements.input.value);
-
-    });
-
-    // =========================================
-    // 11. SUGGESTED PROMPTS
-    // =========================================
-
-    elements.suggestions?.addEventListener(
-        "click",
-        event => {
-
-            const button = event.target.closest(
-                "[data-coach-prompt]"
-            );
-
-            if (!button) return;
-
-            const prompt = button.dataset.coachPrompt;
-
-            if (!prompt || !elements.input) return;
-
-            elements.input.value = prompt;
-
-            resizeInput();
-            updateSendButton();
-            updateSuggestions();
-
-            elements.input.focus();
-
-        }
-    );
-
-    // =========================================
-    // 12. NEW CONVERSATION
-    // =========================================
-
-    function startNewChat() {
-
-        const chat = createNewChat();
-
-        conversations.unshift(chat);
-
-        activeChatId = chat.id;
-
-        saveChats();
-
-        renderEverything();
-
-        closeSidebar();
-
-        elements.input?.focus();
-    }
-
-    elements.newChat?.addEventListener(
-        "click",
-        startNewChat
-    );
-
-    // =========================================
-    // 13. CLEAR CONVERSATION
-    // =========================================
-
-    elements.clear?.addEventListener("click", () => {
-
-        const chat = getActiveChat();
-
-        if (!chat || chat.messages.length === 0) return;
-
-        if (!confirm(
-            "Clear all messages in this conversation?"
-        )) return;
-
-        chat.messages = [];
-        chat.title = "New conversation";
-        chat.updatedAt = Date.now();
-
-        saveChats();
-
-        renderEverything();
-    });
-
-    // =========================================
-    // 14. MOBILE SIDEBAR
-    // =========================================
+    // ======================================
+    // MOBILE SIDEBAR
+    // ======================================
 
     function openSidebar() {
 
-        elements.sidebar?.classList.add("open");
-
+        elements.sidebar?.classList.add("sidebar-open");
         elements.overlay?.classList.add("active");
-
     }
 
     function closeSidebar() {
 
-        elements.sidebar?.classList.remove("open");
-
+        elements.sidebar?.classList.remove("sidebar-open");
         elements.overlay?.classList.remove("active");
-
     }
 
-    elements.menu?.addEventListener(
+    elements.menuButton?.addEventListener(
         "click",
         openSidebar
     );
@@ -637,87 +601,104 @@ document.addEventListener("DOMContentLoaded", () => {
         closeSidebar
     );
 
-    // =========================================
-    // 15. MODE BUTTONS
-    // =========================================
+    // ======================================
+    // CLEAR CURRENT CONVERSATION
+    // ======================================
 
-    document.querySelectorAll("[data-coach-mode]")
-        .forEach(button => {
+    if (elements.clearButton) {
 
-            button.addEventListener("click", () => {
+        elements.clearButton.addEventListener("click", () => {
 
-                selectMode(button.dataset.coachMode);
+            const chat = getActiveChat();
 
-                closeSidebar();
+            if (!chat) return;
 
-            });
+            const confirmed = confirm(
+                "Clear all messages in this conversation?"
+            );
 
+            if (!confirmed) return;
+
+            chat.messages = [];
+
+            // Clearing an existing conversation does not
+            // count as starting a new one.
+            chat.showSuggestions = false;
+            chat.title = "Cleared conversation";
+
+            saveChats();
+
+            renderMessages();
+            renderHistory();
+            updateSuggestions();
         });
+    }
 
-    // =========================================
-    // 16. LIGHT AND DARK THEMES
-    // =========================================
+    // ======================================
+    // THEME
+    // ======================================
 
     function applyTheme(theme) {
 
-        const light = theme === "light";
-
         document.body.classList.toggle(
             "light-theme",
-            light
+            theme === "light"
         );
 
-        localStorage.setItem(
-            THEME_STORAGE,
-            light ? "light" : "dark"
-        );
+        try {
+            localStorage.setItem(THEME_STORAGE, theme);
+        } catch (error) {
+            console.error("Could not save theme:", error);
+        }
 
-        if (elements.theme) {
+        if (elements.themeButton) {
 
-            const icon = light ? "moon" : "sun";
-
-            elements.theme.innerHTML =
-                `<i data-lucide="${icon}"></i>`;
-
-            elements.theme.setAttribute(
-                "aria-label",
-                light
-                    ? "Switch to dark theme"
-                    : "Switch to light theme"
-            );
+            elements.themeButton.innerHTML =
+                theme === "light"
+                    ? '<i data-lucide="moon"></i>'
+                    : '<i data-lucide="sun"></i>';
 
             refreshIcons();
         }
     }
 
-    elements.theme?.addEventListener("click", () => {
+    function refreshIcons() {
 
-        const currentlyLight =
-            document.body.classList.contains("light-theme");
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    }
 
-        applyTheme(currentlyLight ? "dark" : "light");
+    if (elements.themeButton) {
 
-    });
+        elements.themeButton.addEventListener("click", () => {
 
-    // =========================================
-    // 17. SUBSCRIPTION DISPLAY
-    // =========================================
+            const isLight =
+                document.body.classList.contains("light-theme");
+
+            applyTheme(isLight ? "dark" : "light");
+        });
+    }
+
+    // ======================================
+    // ACCESS PLACEHOLDERS
+    // ======================================
 
     function updateAccessNotice() {
 
-        if (elements.plan) {
-            elements.plan.textContent =
+        if (elements.planName) {
+            elements.planName.textContent =
                 "Subscription verification pending";
         }
 
-        if (elements.access) {
-            elements.access.textContent =
+        if (elements.accessStatus) {
+            elements.accessStatus.textContent =
                 "Secure AI connection not active";
         }
 
         if (elements.creditDescription) {
             elements.creditDescription.textContent =
-                "AI credit information will appear when connected.";
+                "Credit balance will appear after verification.";
         }
 
         if (elements.creditCount) {
@@ -725,46 +706,45 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // =========================================
-    // 18. RENDER EVERYTHING
-    // =========================================
-
-    function renderEverything() {
-
-        renderMessages();
-
-        renderHistory();
-
-        updateModes();
-
-        updateSuggestions();
-
-        updateSendButton();
-
-    }
-
-    // =========================================
-    // 19. INITIALIZE
-    // =========================================
+    // ======================================
+    // INITIALIZE
+    // ======================================
 
     loadChats();
 
-    const savedTheme =
-        localStorage.getItem(THEME_STORAGE) || "dark";
+    if (chats.length > 0) {
 
-    applyTheme(savedTheme);
+        // Restore the latest conversation.
+        activeChatId = chats[0].id;
+
+    } else {
+
+        // First visit: create a new conversation.
+        createNewConversation();
+    }
+
+    if (!activeChatId) {
+        createNewConversation();
+    }
+
+    renderHistory();
+    renderMessages();
+    updateSuggestions();
+    restoreMode();
 
     updateAccessNotice();
 
-    renderEverything();
+    const savedTheme = (() => {
+        try {
+            return localStorage.getItem(THEME_STORAGE);
+        } catch (error) {
+            return null;
+        }
+    })();
 
-    resizeInput();
+    applyTheme(savedTheme === "light" ? "light" : "dark");
 
     refreshIcons();
 
-    window.addEventListener("lifetrack:ready", () => {
-        updateAccessNotice();
-    });
-
 });
-               
+       
