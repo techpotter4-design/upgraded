@@ -3067,6 +3067,272 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 })();
+
+/* ==========================================
+   LIFETRACK REWARDS CENTER
+   Supabase Integration - Version 1
+========================================== */
+
+(() => {
+    let rewardsInitialized = false;
+
+    const startRewards = async () => {
+        if (rewardsInitialized) return;
+
+        const app = window.LifeTrack;
+        if (!app || !app.db || !app.user) return;
+
+        rewardsInitialized = true;
+
+        const db = app.db;
+        const user = app.user;
+
+        const grid = document.getElementById("rewardGrid");
+        const history = document.getElementById("rewardHistory");
+
+        const pointsDisplay =
+            document.getElementById("rewardAvailablePoints");
+
+        const totalDisplay =
+            document.getElementById("rewardTotalPoints");
+
+        const creditsDisplay =
+            document.getElementById("rewardAICredits");
+
+        const redeemedDisplay =
+            document.getElementById("rewardRedeemedCount");
+
+        const planTitle =
+            document.getElementById("rewardPlanTitle");
+
+        const planDescription =
+            document.getElementById("rewardPlanDescription");
+
+        if (!grid || !history) return;
+
+        // Create a message area.
+        let message = document.getElementById("rewardMessage");
+
+        if (!message) {
+            message = document.createElement("div");
+            message.id = "rewardMessage";
+            message.style.margin = "12px 0";
+            message.style.fontSize = "13px";
+            message.style.fontWeight = "600";
+            grid.parentNode.insertBefore(message, grid);
+        }
+
+        const showMessage = (text, success = false) => {
+            message.textContent = text;
+            message.style.color = success ? "#16834a" : "#d04444";
+        };
+
+        // Display subscription guidance.
+        if (planTitle) {
+            planTitle.textContent = "Standard plan rewards";
+        }
+
+        if (planDescription) {
+            planDescription.textContent =
+                "Standard users can exchange earned points for AI Coach questions. Advanced users receive AI Coach access through their subscription.";
+        }
+
+        // Load wallet information.
+        const loadWallet = async () => {
+            const { data, error } = await db
+                .from("reward_wallets")
+                .select("*")
+                .eq("user_id", user.id)
+                .maybeSingle();
+
+            if (error) throw error;
+
+            const wallet = data || {};
+
+            if (pointsDisplay) {
+                pointsDisplay.textContent =
+                    wallet.points_balance || 0;
+            }
+
+            if (totalDisplay) {
+                totalDisplay.textContent =
+                    wallet.lifetime_points_earned || 0;
+            }
+
+            if (creditsDisplay) {
+                creditsDisplay.textContent =
+                    wallet.ai_question_credits || 0;
+            }
+
+            if (redeemedDisplay) {
+                redeemedDisplay.textContent =
+                    wallet.total_credits_redeemed || 0;
+            }
+        };
+
+        // Load available packages.
+        const loadPackages = async () => {
+            const { data, error } = await db
+                .from("reward_packages")
+                .select("*")
+                .eq("is_active", true)
+                .order("points_cost", { ascending: true });
+
+            if (error) throw error;
+
+            grid.replaceChildren();
+
+            if (!data || data.length === 0) {
+                grid.textContent = "No reward packages available.";
+                return;
+            }
+
+            data.forEach(pkg => {
+                const card = document.createElement("div");
+                card.className = "reward-card";
+
+                const icon = document.createElement("div");
+                icon.className = "reward-icon";
+                icon.innerHTML = '<i data-lucide="brain-circuit"></i>';
+
+                const label = document.createElement("span");
+                label.className = "reward-package-label";
+                label.textContent = "AI QUESTION PACKAGE";
+
+                const title = document.createElement("h3");
+                title.textContent =
+                    `${pkg.ai_questions} AI Questions`;
+
+                const cost = document.createElement("div");
+                cost.className = "reward-cost";
+                cost.textContent = `${pkg.points_cost} Points`;
+
+                const button = document.createElement("button");
+                button.className = "reward-redeem-btn";
+                button.textContent = "Redeem Points";
+
+                button.addEventListener("click", async () => {
+                    const confirmed = window.confirm(
+                        `Redeem ${pkg.points_cost} points for ${pkg.ai_questions} AI questions?`
+                    );
+
+                    if (!confirmed) return;
+
+                    button.disabled = true;
+                    button.textContent = "Processing...";
+
+                    try {
+                        const { data: result, error: redeemError } =
+                            await db.rpc(
+                                "redeem_ai_question_package",
+                                { p_package_id: pkg.id }
+                            );
+
+                        if (redeemError) throw redeemError;
+
+                        if (!result || !result.success) {
+                            throw new Error("Redemption was not confirmed.");
+                        }
+
+                        showMessage(
+                            `Success! ${result.questions_added} AI question credits added.`,
+                            true
+                        );
+
+                        await loadWallet();
+                        await loadHistory();
+
+                    } catch (error) {
+                        console.error("Rewards redemption:", error);
+                        showMessage(
+                            error.message || "Redemption failed."
+                        );
+                    } finally {
+                        button.disabled = false;
+                        button.textContent = "Redeem Points";
+                    }
+                });
+
+                card.append(icon, label, title, cost, button);
+                grid.appendChild(card);
+            });
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        };
+
+        // Load redemption history.
+        const loadHistory = async () => {
+            const { data, error } = await db
+                .from("reward_redemptions")
+                .select("*")
+                .eq("user_id", user.id)
+                .order("created_at", { ascending: false })
+                .limit(10);
+
+            if (error) throw error;
+
+            history.replaceChildren();
+
+            if (!data || data.length === 0) {
+                history.textContent = "No redemptions yet.";
+                return;
+            }
+
+            data.forEach(item => {
+                const entry = document.createElement("div");
+                entry.style.padding = "12px 0";
+                entry.style.borderBottom =
+                    "1px solid var(--border-color, #eee)";
+
+                const heading = document.createElement("strong");
+                heading.textContent = item.package_name;
+
+                const details = document.createElement("p");
+                details.style.margin = "5px 0";
+                details.textContent =
+                    `${item.points_spent} points spent • ${item.questions_added} AI questions received`;
+
+                const date = document.createElement("small");
+                date.textContent = new Date(
+                    item.created_at
+                ).toLocaleString();
+
+                entry.append(heading, details, date);
+                history.appendChild(entry);
+            });
+        };
+
+        // Load everything.
+        try {
+            grid.textContent = "Loading reward packages...";
+            history.textContent = "Loading redemption history...";
+
+            await Promise.all([
+                loadWallet(),
+                loadPackages(),
+                loadHistory()
+            ]);
+
+            console.log("LifeTrack Rewards loaded successfully.");
+
+        } catch (error) {
+            console.error("Rewards loading error:", error);
+            showMessage(
+                "Unable to load Rewards Center. Please refresh the page."
+            );
+        }
+    };
+
+    // Wait for LifeTrack authentication.
+    window.addEventListener("lifetrack:ready", startRewards);
+
+    if (window.LifeTrack?.user) {
+        startRewards();
+    }
+})();
+
         
             
                                                 
