@@ -221,6 +221,138 @@
             <div class="page-content" id="pageContent">
 
                 <!-- DASHBOARD SECTIONS WILL GO HERE -->
+                
+<!-- SECTION 4: DASHBOARD OVERVIEW -->
+
+<section class="dashboard-section active"
+         id="section-overview">
+
+    <!-- WELCOME HEADER -->
+    <div class="welcome-section">
+        <div>
+            <p class="welcome-label">YOUR PERSONAL SPACE</p>
+            <h2>Welcome back, <span id="welcomeUserName">there</span>!</h2>
+            <p>Every small step brings you closer to your goals.</p>
+        </div>
+
+        <div class="welcome-date" id="welcomeDate">
+            Today
+        </div>
+    </div>
+
+    <!-- STATISTICS -->
+    <div class="stats-grid">
+
+        <article class="stat-card">
+            <div class="stat-icon purple">
+                <i data-lucide="target"></i>
+            </div>
+            <p>Active Habits</p>
+            <h3 id="activeHabitsCount">0</h3>
+            <span>Your current routines</span>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-icon green">
+                <i data-lucide="check-circle"></i>
+            </div>
+            <p>Completed Today</p>
+            <h3 id="completedHabitsCount">0</h3>
+            <span>Habits completed</span>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-icon orange">
+                <i data-lucide="flame"></i>
+            </div>
+            <p>Current Streak</p>
+            <h3 id="currentStreak">0 days</h3>
+            <span>Keep your momentum</span>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-icon blue">
+                <i data-lucide="trending-up"></i>
+            </div>
+            <p>Goal Progress</p>
+            <h3 id="goalProgress">0%</h3>
+            <span>Overall progress</span>
+        </article>
+
+    </div>
+
+    <!-- MAIN OVERVIEW GRID -->
+    <div class="overview-grid">
+
+        <div class="overview-card">
+            <div class="card-heading">
+                <div>
+                    <h3>Today's Habits</h3>
+                    <p>Stay consistent with your routines.</p>
+                </div>
+                <button data-section="habits">View All</button>
+            </div>
+
+            <div id="todayHabitsList">
+                <p class="empty-message">
+                    Your habits will appear here.
+                </p>
+            </div>
+        </div>
+
+        <div class="overview-card">
+            <div class="card-heading">
+                <div>
+                    <h3>Daily Mood</h3>
+                    <p>How are you feeling today?</p>
+                </div>
+                <button data-section="mood">Check In</button>
+            </div>
+
+            <div id="todayMoodSummary">
+                <p class="empty-message">
+                    You haven't recorded today's mood yet.
+                </p>
+            </div>
+        </div>
+
+        <div class="overview-card">
+            <div class="card-heading">
+                <div>
+                    <h3>My Goals</h3>
+                    <p>Keep moving forward.</p>
+                </div>
+                <button data-section="goals">View All</button>
+            </div>
+
+            <div id="overviewGoalsList">
+                <p class="empty-message">
+                    Your goals will appear here.
+                </p>
+            </div>
+        </div>
+
+        <div class="overview-card">
+            <div class="card-heading">
+                <div>
+                    <h3>Quick Actions</h3>
+                    <p>What would you like to do?</p>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <button data-section="habits">Add a Habit</button>
+                <button data-section="journal">Write Journal</button>
+                <button data-section="mood">Record Mood</button>
+                <button data-section="goals">Create a Goal</button>
+            </div>
+        </div>
+
+    </div>
+
+</section>
+<!-- END OVERVIEW -->
+                
 
             </div>
             <!-- END DASHBOARD CONTENT -->
