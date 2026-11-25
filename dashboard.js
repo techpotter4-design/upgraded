@@ -1240,18 +1240,34 @@ document.addEventListener("DOMContentLoaded", () => {
    LIFETRACK — GOALS MANAGER
 ========================================= */
 
+/* =========================================
+   LIFETRACK — GOALS MANAGER V2
+========================================= */
+
 document.addEventListener("DOMContentLoaded", () => {
+    "use strict";
+
     const $ = id => document.getElementById(id);
 
     const form = $("goalForm");
     const goalList = $("goalList");
     const formCard = $("goalFormCard");
 
-    if (!form || !goalList) return;
+    if (!form || !goalList || !formCard) return;
 
     let goals = [];
     let activeFilter = "all";
     let searchTerm = "";
+    let loading = false;
+
+    const state = window.LifeTrack;
+
+    function localDate(date = new Date()) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    }
 
     function showMessage(text, error = false) {
         const element = $("goalMessage");
@@ -1268,13 +1284,13 @@ document.addEventListener("DOMContentLoaded", () => {
         $("goalTitle").value = goal?.title || "";
         $("goalDescription").value = goal?.description || "";
         $("goalDeadline").value = goal?.target_date || "";
-        $("goalPriority").value = goal?.priority || "medium";
+        $("goalPriority").value = "medium";
         $("goalProgressInput").value = goal?.progress ?? 0;
 
         $("goalProgressField").hidden = !goal;
 
         $("goalFormTitle").textContent = goal
-            ? "Update Your Goal"
+            ? "Edit Your Goal"
             : "Create a New Goal";
 
         formCard.hidden = false;
@@ -1293,16 +1309,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function calculateStats() {
         const total = goals.length;
+
         const completed = goals.filter(
             goal => goal.status === "completed"
         ).length;
 
-        const active = total - completed;
+        const active = goals.filter(
+            goal => goal.status !== "completed"
+        ).length;
 
         const average = total
             ? Math.round(
                 goals.reduce(
-                    (sum, goal) => sum + Number(goal.progress || 0), 0
+                    (sum, goal) => sum + Number(goal.progress || 0),
+                    0
                 ) / total
             )
             : 0;
@@ -1333,7 +1353,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const description = document.createElement("p");
         description.className = "goal-description";
-        description.textContent = goal.description || "No description added.";
+        description.textContent =
+            goal.description || "No description added.";
 
         const progressArea = document.createElement("div");
         progressArea.className = "goal-progress-area";
@@ -1345,6 +1366,7 @@ document.addEventListener("DOMContentLoaded", () => {
         progressLabel.textContent = "Your progress";
 
         const progressValue = document.createElement("strong");
+
         const progress = Math.min(
             100,
             Math.max(0, Number(goal.progress) || 0)
@@ -1367,18 +1389,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const meta = document.createElement("div");
         meta.className = "goal-meta";
 
-        const priority = document.createElement("span");
-        priority.textContent =
-            `Priority: $("goalPriority").value = "medium";
-
         const deadline = document.createElement("span");
+
         deadline.textContent = goal.target_date
             ? `Target: ${new Date(
                 goal.target_date + "T00:00:00"
             ).toLocaleDateString("en-US")}`
             : "No deadline";
 
-        meta.append(priority, deadline);
+        meta.appendChild(deadline);
 
         const actions = document.createElement("div");
         actions.className = "goal-actions";
@@ -1444,9 +1463,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!visible.length) {
             const empty = document.createElement("p");
             empty.className = "empty-message";
+
             empty.textContent = goals.length
-                ? "No goals match your search or filter."
-                : "Your goals will appear here. Create your first goal!";
+                ? "No goals match your search."
+                : "You haven't created any goals yet.";
+
             goalList.appendChild(empty);
             return;
         }
@@ -1457,33 +1478,43 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function loadGoals() {
-        const state = window.LifeTrack;
-        if (!state?.db || !state.user) return;
+        if (loading) return;
 
-        const { data, error } = await state.db
-            .from("goals")
-            .select("*")
-            .eq("user_id", state.user.id)
-            .order("created_at", { ascending: false });
-
-        if (error) {
-            console.error("Goals loading error:", error);
-            showMessage("Unable to load your goals.", true);
+        if (!state?.db || !state.user) {
+            console.warn("Goals: Waiting for LifeTrack account.");
             return;
         }
 
-        goals = data || [];
+        loading = true;
 
-        calculateStats();
-        renderGoals();
+        try {
+            const { data, error } = await state.db
+                .from("goals")
+                .select("id,user_id,title,description,target_date,progress,status,created_at")
+                .eq("user_id", state.user.id)
+                .order("created_at", { ascending: false });
+
+            if (error) throw error;
+
+            goals = data || [];
+
+            calculateStats();
+            renderGoals();
+
+        } catch (error) {
+            console.error("Goals loading error:", error);
+            showMessage("Unable to load goals. Please try again.", true);
+
+        } finally {
+            loading = false;
+        }
     }
 
     form.addEventListener("submit", async event => {
         event.preventDefault();
 
-        const state = window.LifeTrack;
         if (!state?.db || !state.user) {
-            showMessage("Please wait for your account to load.", true);
+            showMessage("Your account is not ready yet.", true);
             return;
         }
 
@@ -1491,7 +1522,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const title = $("goalTitle").value.trim();
         const description = $("goalDescription").value.trim();
         const targetDate = $("goalDeadline").value;
-        const priority = $("goalPriority").value;
 
         const progress = id
             ? Math.min(100, Math.max(
@@ -1507,38 +1537,48 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const record = {
             user_id: state.user.id,
-            title,
-            description,
+            title: title,
+            description: description,
             target_date: targetDate || null,
-            progress,
+            progress: progress,
             status: progress === 100 ? "completed" : "active"
         };
 
-
         const saveButton = $("saveGoalButton");
         saveButton.disabled = true;
+
         showMessage("Saving your goal...");
 
-        const result = id
-            ? await state.db.from("goals")
-                .update(record)
-                .eq("id", id)
-                .eq("user_id", state.user.id)
-            : await state.db.from("goals").insert(record);
+        try {
+            let result;
 
-        saveButton.disabled = false;
+            if (id) {
+                result = await state.db
+                    .from("goals")
+                    .update(record)
+                    .eq("id", id)
+                    .eq("user_id", state.user.id);
+            } else {
+                result = await state.db
+                    .from("goals")
+                    .insert(record);
+            }
 
-        if (result.error) {
-            console.error("Goal save error:", result.error);
+            if (result.error) throw result.error;
+
+            closeForm();
+            await loadGoals();
+
+        } catch (error) {
+            console.error("Goal save error:", error);
             showMessage(
-                "Could not save your goal. Check the database columns.",
+                error.message || "Unable to save your goal.",
                 true
             );
-            return;
-        }
 
-        closeForm();
-        await loadGoals();
+        } finally {
+            saveButton.disabled = false;
+        }
     });
 
     goalList.addEventListener("click", async event => {
@@ -1549,57 +1589,71 @@ document.addEventListener("DOMContentLoaded", () => {
             String(item.id) === button.dataset.id
         );
 
-        if (!goal) return;
+        if (!goal || !state?.db || !state.user) return;
 
-        const state = window.LifeTrack;
+        const action = button.dataset.action;
 
-        if (button.dataset.action === "edit") {
+        if (action === "edit") {
             openForm(goal);
             return;
         }
 
-        if (button.dataset.action === "delete") {
+        if (action === "delete") {
             if (!confirm("Permanently delete this goal?")) return;
 
-            const { error } = await state.db
-                .from("goals")
-                .delete()
-                .eq("id", goal.id)
-                .eq("user_id", state.user.id);
+            button.disabled = true;
 
-            if (error) {
-                console.error(error);
+            try {
+                const { error } = await state.db
+                    .from("goals")
+                    .delete()
+                    .eq("id", goal.id)
+                    .eq("user_id", state.user.id);
+
+                if (error) throw error;
+
+                await loadGoals();
+
+            } catch (error) {
+                console.error("Goal delete error:", error);
                 showMessage("Unable to delete this goal.", true);
-                return;
+                button.disabled = false;
             }
 
-            await loadGoals();
+            return;
         }
 
-        if (button.dataset.action === "complete") {
+        if (action === "complete") {
+            button.disabled = true;
+
             const completed = goal.status !== "completed";
 
-            const { error } = await state.db
-                .from("goals")
-                .update({
-                    status: completed ? "completed" : "active",
-                    progress: completed ? 100 : 0
-                })
-                .eq("id", goal.id)
-                .eq("user_id", state.user.id);
+            try {
+                const { error } = await state.db
+                    .from("goals")
+                    .update({
+                        status: completed ? "completed" : "active",
+                        progress: completed ? 100 : 0
+                    })
+                    .eq("id", goal.id)
+                    .eq("user_id", state.user.id);
 
-            if (error) {
-                console.error(error);
-                showMessage("Unable to update goal status.", true);
-                return;
+                if (error) throw error;
+
+                await loadGoals();
+
+            } catch (error) {
+                console.error("Goal update error:", error);
+                showMessage("Unable to update this goal.", true);
+                button.disabled = false;
             }
-
-            await loadGoals();
         }
     });
 
     $("addGoalButton")?.addEventListener("click", () => openForm());
+
     $("closeGoalButton")?.addEventListener("click", closeForm);
+
     $("cancelGoalButton")?.addEventListener("click", closeForm);
 
     $("goalSearch")?.addEventListener("input", event => {
@@ -1621,8 +1675,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.addEventListener("lifetrack:ready", loadGoals);
 
-    if (window.LifeTrack?.user) {
+    if (state?.user) {
         loadGoals();
     }
+
 });
-                          
+                                                
