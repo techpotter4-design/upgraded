@@ -460,6 +460,95 @@
 </section>
 <!-- END HABIT MANAGEMENT -->
                 
+<!-- MOOD TRACKER SECTION -->
+<section class="dashboard-section" id="section-mood">
+
+    <div class="section-header">
+        <div>
+            <h2>Mood Tracker</h2>
+            <p>Understand your emotions and build emotional awareness.</p>
+        </div>
+    </div>
+
+    <!-- DAILY MOOD CHECK-IN -->
+    <div class="mood-checkin-card">
+        <div class="mood-card-heading">
+            <h3>How are you feeling today?</h3>
+            <p>Take a moment to check in with yourself.</p>
+        </div>
+
+        <form id="moodForm">
+
+            <div class="mood-options">
+
+                <label class="mood-option">
+                    <input type="radio" name="mood" value="very_bad" required>
+                    <span class="mood-icon">1</span>
+                    <strong>Very Bad</strong>
+                </label>
+
+                <label class="mood-option">
+                    <input type="radio" name="mood" value="bad">
+                    <span class="mood-icon">2</span>
+                    <strong>Bad</strong>
+                </label>
+
+                <label class="mood-option">
+                    <input type="radio" name="mood" value="neutral">
+                    <span class="mood-icon">3</span>
+                    <strong>Neutral</strong>
+                </label>
+
+                <label class="mood-option">
+                    <input type="radio" name="mood" value="good">
+                    <span class="mood-icon">4</span>
+                    <strong>Good</strong>
+                </label>
+
+                <label class="mood-option">
+                    <input type="radio" name="mood" value="excellent">
+                    <span class="mood-icon">5</span>
+                    <strong>Excellent</strong>
+                </label>
+
+            </div>
+
+            <label for="moodNote">What's influencing your mood?</label>
+
+            <textarea
+                id="moodNote"
+                rows="4"
+                maxlength="2000"
+                placeholder="Write about your feelings, experiences, or anything on your mind..."
+            ></textarea>
+
+            <button type="submit" class="primary-button" id="saveMoodButton">
+                Save Mood Check-in
+            </button>
+
+            <p id="moodMessage" role="status"></p>
+
+        </form>
+    </div>
+
+    <!-- MOOD HISTORY -->
+    <div class="mood-history-card">
+        <div class="card-heading">
+            <div>
+                <h3>Your Mood History</h3>
+                <p>Review your recent emotional check-ins.</p>
+            </div>
+        </div>
+
+        <div id="moodHistoryList">
+            <p class="empty-message">Your mood history will appear here.</p>
+        </div>
+    </div>
+
+</section>
+<!-- END MOOD TRACKER -->
+                
+                
                 
                 
 
