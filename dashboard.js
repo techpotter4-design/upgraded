@@ -307,4 +307,184 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 });
+
+// =====================================
+// SECTION 4: OVERVIEW JAVASCRIPT
+// =====================================
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const app = window.LifeTrack;
+    if (!app) return;
+
+    // WAIT FOR AUTHENTICATION
+    document.addEventListener("lifetrack:ready", loadOverview);
+
+    async function loadOverview() {
+
+        const db = app.db;
+        const user = app.user;
+
+        if (!user) return;
+
+        const today = new Date().toISOString().split("T")[0];
+
+        // USER GREETING
+        const name =
+            user.user_metadata?.full_name ||
+            user.email?.split("@")[0] ||
+            "there";
+
+        document.getElementById("welcomeUserName")
+            .textContent = name;
+
+        document.getElementById("welcomeDate")
+            .textContent = new Date().toLocaleDateString(
+                "en-US",
+                { month: "long", day: "numeric" }
+            );
+
+        try {
+
+            // LOAD HABITS
+            const habitsResult = await db
+                .from("habits")
+                .select("id, title, is_active")
+                .eq("user_id", user.id)
+                .eq("is_active", true);
+
+            if (habitsResult.error) throw habitsResult.error;
+
+            const habits = habitsResult.data || [];
+
+            app.habits = habits;
+
+            document.getElementById("activeHabitsCount")
+                .textContent = habits.length;
+
+            // LOAD HABIT LOGS
+            const logsResult = await db
+                .from("habit_logs")
+                .select("habit_id, completed_on, completed")
+                .eq("user_id", user.id)
+                .eq("completed", true)
+                .order("completed_on", { ascending: false });
+
+            if (logsResult.error) throw logsResult.error;
+
+            const logs = logsResult.data || [];
+
+            const completedToday = logs.filter(
+                log => log.completed_on === today
+            );
+
+            document.getElementById("completedHabitsCount")
+                .textContent = completedToday.length;
+
+            // LOAD TODAY'S MOOD
+            const moodResult = await db
+                .from("mood_entries")
+                .select("mood, mood_score, note")
+                .eq("user_id", user.id)
+                .eq("entry_date", today)
+                .limit(1);
+
+            if (moodResult.error) throw moodResult.error;
+
+            const mood = moodResult.data?.[0];
+
+            if (mood) {
+                document.getElementById("todayMoodSummary")
+                    .textContent = mood.mood;
+            }
+
+            // LOAD GOALS
+            const goalsResult = await db
+                .from("goals")
+                .select("id, title, progress, status")
+                .eq("user_id", user.id);
+
+            if (goalsResult.error) throw goalsResult.error;
+
+            const goals = goalsResult.data || [];
+
+            app.goals = goals;
+
+            const activeGoals = goals.filter(
+                goal => goal.status !== "completed"
+            );
+
+            const average = activeGoals.length
+                ? Math.round(
+                    activeGoals.reduce(
+                        (sum, goal) => sum + (goal.progress || 0), 0
+                    ) / activeGoals.length
+                )
+                : 0;
+
+            document.getElementById("goalProgress")
+                .textContent = average + "%";
+
+            // TODAY'S HABIT LIST
+            const habitList = document.getElementById(
+                "todayHabitsList"
+            );
+
+            habitList.textContent = "";
+
+            if (habits.length) {
+                habits.forEach(habit => {
+                    const item = document.createElement("p");
+                    item.className = "empty-message";
+                    item.textContent =
+                        (completedToday.some(
+                            log => log.habit_id === habit.id
+                        ) ? "✓ " : "○ ") + habit.title;
+
+                    habitList.appendChild(item);
+                });
+            }
+
+            // GOAL PREVIEW
+            const goalList = document.getElementById(
+                "overviewGoalsList"
+            );
+
+            goalList.textContent = "";
+
+            activeGoals.slice(0, 3).forEach(goal => {
+                const item = document.createElement("p");
+                item.className = "empty-message";
+                item.textContent =
+                    goal.title + " — " + (goal.progress || 0) + "%";
+
+                goalList.appendChild(item);
+            });
+
+        } catch (error) {
+            console.error("Overview loading error:", error);
+        }
+    }
+
+    // QUICK ACTION NAVIGATION
+    document.getElementById("pageContent")
+        ?.addEventListener("click", event => {
+
+            const button = event.target.closest(
+                "[data-section]"
+            );
+
+            if (!button) return;
+
+            const section = button.dataset.section;
+
+            const navLink = document.querySelector(
+                `.nav-link[data-section="${section}"]`
+            );
+
+            navLink?.click();
+        });
+
+});
+                    
             
