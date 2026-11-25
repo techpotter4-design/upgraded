@@ -722,4 +722,233 @@ body.sidebar-collapsed .sidebar-profile {
         grid-template-columns: 1fr;
     }
    }
+
+/* =================================
+   SECTION 5: HABIT MANAGEMENT
+================================= */
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.section-header h2 {
+    font-size: 23px;
+}
+
+.section-header p {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.primary-button {
+    min-height: 42px;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: white;
+    background: var(--primary);
+    border: 0;
+    border-radius: 9px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.primary-button:hover {
+    background: #7c3aed;
+}
+
+.habit-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 22px;
+}
+
+.habit-summary-card,
+.habit-form-card,
+.habit-list-card {
+    padding: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+
+.habit-summary-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.habit-summary-card span {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.habit-summary-card strong {
+    font-size: 25px;
+}
+
+.habit-form-card {
+    margin-bottom: 22px;
+}
+
+.habit-form-card[hidden] {
+    display: none;
+}
+
+.habit-form-card h3,
+.habit-list-card h3 {
+    margin-bottom: 18px;
+    font-size: 16px;
+}
+
+.habit-form-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.habit-form-card form > label {
+    margin-top: 7px;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.habit-form-card input:not([type="checkbox"]),
+.habit-form-card textarea,
+.habit-form-card select {
+    width: 100%;
+    padding: 12px;
+    color: var(--text-main);
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    outline: none;
+}
+
+.habit-form-card input:focus,
+.habit-form-card textarea:focus,
+.habit-form-card select:focus {
+    border-color: var(--primary);
+}
+
+.habit-form-card input[type="color"] {
+    height: 45px;
+    padding: 4px;
+}
+
+.habit-form-card select option {
+    background: var(--bg-card);
+}
+
+.habit-days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 0;
+}
+
+.habit-days label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-secondary);
+    font-size: 11px;
+}
+
+.habit-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.habit-form-actions button[type="button"] {
+    padding: 0 16px;
+    color: var(--text-secondary);
+    background: var(--bg-hover);
+    border: 0;
+    border-radius: 8px;
+}
+
+.habit-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.habit-item:last-child {
+    border-bottom: 0;
+}
+
+.habit-item-info {
+    min-width: 0;
+}
+
+.habit-item-info strong {
+    display: block;
+    font-size: 13px;
+}
+
+.habit-item-info span {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.habit-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.habit-item-actions button {
+    padding: 8px;
+    color: var(--text-secondary);
+    background: var(--bg-hover);
+    border: 0;
+    border-radius: 7px;
+}
+
+.habit-item-actions .habit-check.completed {
+    color: #4ade80;
+    background: rgba(34,197,94,.15);
+}
+
+@media (max-width: 600px) {
+    .section-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .habit-summary {
+        gap: 9px;
+    }
+
+    .habit-summary-card {
+        padding: 13px 10px;
+    }
+
+    .habit-summary-card span {
+        font-size: 10px;
+    }
+
+    .habit-summary-card strong {
+        font-size: 21px;
+    }
+
+    .habit-item {
+        align-items: flex-start;
+    }
+   }
+
        
