@@ -1460,56 +1460,106 @@ iv class="achievement-toolbar">
 
 </section>
             
-<!-- NOTIFICATIONS SECTION -->
-<section class="dashboard-section" id="section-notifications" hidden>
 
-    <div class="section-header">
-        <div>
-            <h2>Notifications</h2>
-            <p>Stay updated on your habits, goals, and account activity.</p>
+<!-- =========================================
+     LIFETRACK NOTIFICATION CENTRE
+========================================= -->
+
+<section class="dashboard-section" id="notifications">
+
+    <div class="notifications-page">
+
+        <!-- PAGE HEADER -->
+        <div class="notifications-header">
+            <div>
+                <span class="notifications-eyebrow">YOUR ACTIVITY</span>
+                <h1>Notifications</h1>
+                <p>Important updates and reminders, all in one place.</p>
+            </div>
+
+            <button
+                type="button"
+                class="notifications-mark-all"
+                id="markAllNotifications">
+                <i data-lucide="check-check"></i>
+                <span>Mark all as read</span>
+            </button>
         </div>
 
-        <button class="notification-mark-all" id="markAllNotifications">
-            Mark all as read
-        </button>
-    </div>
+        <!-- SUMMARY -->
+        <div class="notifications-stats">
 
-    <div class="notification-summary">
-        <div class="notification-summary-card">
-            <span>Unread notifications</span>
-            <strong id="unreadNotificationCount">0</strong>
+            <article class="notification-stat">
+                <div class="notification-stat-icon unread-icon">
+                    <i data-lucide="bell-ring"></i>
+                </div>
+                <div>
+                    <span>Unread</span>
+                    <strong id="unreadNotificationCount">0</strong>
+                </div>
+            </article>
+
+            <article class="notification-stat">
+                <div class="notification-stat-icon total-icon">
+                    <i data-lucide="inbox"></i>
+                </div>
+                <div>
+                    <span>Total notifications</span>
+                    <strong id="totalNotificationCount">0</strong>
+                </div>
+            </article>
+
         </div>
 
-        <div class="notification-summary-card">
-            <span>Total notifications</span>
-            <strong id="totalNotificationCount">0</strong>
-        </div>
-    </div>
+        <!-- NOTIFICATION LIST PANEL -->
+        <div class="notifications-panel">
 
-    <div class="notification-toolbar">
-        <h3>Recent activity</h3>
+            <div class="notifications-panel-header">
+                <div>
+                    <h2>Recent activity</h2>
+                    <p>Your latest LifeTrack updates</p>
+                </div>
 
-        <select id="notificationFilter">
-            <option value="all">All notifications</option>
-            <option value="unread">Unread only</option>
-            <option value="read">Read only</option>
-        </select>
-    </div>
+                <label class="notification-filter-wrap">
+                    <span class="sr-only">Filter notifications</span>
+                    <select id="notificationFilter">
+                        <option value="all">All activity</option>
+                        <option value="unread">Unread</option>
+                        <option value="read">Read</option>
+                    </select>
+                    <i data-lucide="chevron-down"></i>
+                </label>
+            </div>
 
-    <div class="notification-list" id="notificationList">
+            <!-- JavaScript will render notification cards here -->
+            <div class="notification-list" id="notificationList">
 
-        <div class="notification-empty" id="notificationEmpty">
-            <i data-lucide="bell"></i>
-            <h3>You're all caught up!</h3>
-            <p>New notifications will appear here.</p>
+                <div class="notification-empty" id="notificationEmpty">
+                    <div class="notification-empty-icon">
+                        <i data-lucide="bell"></i>
+                    </div>
+                    <h3>You're all caught up</h3>
+                    <p>
+                        When you receive reminders, achievements,
+                        or account updates, they'll appear here.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="notifications-footer">
+                <i data-lucide="shield-check"></i>
+                <span>Your personal updates are private to your account.</span>
+            </div>
+
         </div>
 
     </div>
 
 </section>
-<!-- END NOTIFICATIONS SECTION -->
-            
-            
+
+<!-- END NOTIFICATION CENTRE -->
+    
     
 </div>
             <!-- END DASHBOARD CONTENT -->
