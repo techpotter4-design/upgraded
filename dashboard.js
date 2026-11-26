@@ -168,9 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!section) return;
 
-        const target = document.getElementById(
-            "section-" + section
-        );
+        const target = document.getElementById(section);
 
         if (!target) {
             console.warn("Section not ready:", section);
@@ -300,9 +298,9 @@ document.addEventListener("DOMContentLoaded", () => {
         ?.addEventListener("click", () => {
 
             const notificationLink =
-                document.querySelector(
-                    '[data-section="notifications"]'
-                );
+    document.querySelector(
+        '.sidebar-nav .nav-link[data-section="notifications"]'
+    );
 
             notificationLink?.click();
         });
