@@ -3823,5 +3823,394 @@ body.sidebar-collapsed .sidebar-profile {
     }
    }
    
+/* =========================================
+   LIFETRACK NOTIFICATIONS — FINAL MOBILE FIX
+========================================= */
+
+#notifications,
+#section-notifications {
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+#notifications *,
+#section-notifications * {
+    box-sizing: border-box;
+}
+
+.notifications-page {
+    width: 100%;
+    max-width: 1050px;
+    margin: 0 auto;
+    padding: 8px 4px 28px;
+    color: var(--text);
+}
+
+/* PAGE HEADER */
+
+.notifications-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+/* The topbar already displays the page title */
+.notifications-header h1 {
+    display: none;
+}
+
+.notifications-header p {
+    margin: 0;
+    max-width: 550px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--muted);
+}
+
+.notifications-eyebrow {
+    margin-bottom: 7px;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+}
+
+/* MARK ALL AS READ */
+
+.notifications-mark-all {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 44px;
+    padding: 0 17px;
+    border: 1px solid rgba(139, 92, 246, .45);
+    border-radius: 11px;
+    background: var(--bg-card);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.notifications-mark-all span {
+    color: inherit;
+}
+
+/* SUMMARY CARDS */
+
+.notifications-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.notification-stat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    min-height: 105px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    background: var(--bg-card);
+}
+
+.notification-stat-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 12px;
+}
+
+.notification-stat span {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.notification-stat strong {
+    display: block;
+    margin-top: 4px;
+    color: var(--text);
+    font-size: 26px;
+}
+
+/* ACTIVITY PANEL */
+
+.notifications-panel {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--bg-card);
+}
+
+.notifications-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 19px;
+    border-bottom: 1px solid var(--border);
+}
+
+.notifications-panel-header h2 {
+    color: var(--text);
+    font-size: 16px;
+}
+
+.notifications-panel-header p {
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* FILTER — USE NATIVE ARROW */
+
+.notification-filter-wrap {
+    position: relative;
+    display: block;
+    width: auto;
+    min-width: 140px;
+}
+
+.notification-filter-wrap select {
+    width: 100%;
+    min-width: 140px;
+    height: 42px;
+    padding: 0 12px;
+    appearance: auto;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--bg-main);
+    color: var(--text);
+    font-size: 13px;
+}
+
+/* Hide the extra Lucide arrow */
+.notification-filter-wrap > i {
+    display: none !important;
+}
+
+/* NOTIFICATION LIST */
+
+.notification-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+    min-width: 0;
+    min-height: 100px;
+}
+
+#notificationList:empty {
+    min-height: 100px;
+}
+
+#notificationList:not(:has(.notification-item)):not(:has(.notification-empty)) {
+    padding: 24px 18px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* INDIVIDUAL NOTIFICATIONS */
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    padding: 17px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+}
+
+.notification-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-item-content h3 {
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.notification-item-content p {
+    margin-top: 5px;
+    color: var(--muted);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.notification-item-time {
+    display: block;
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.notification-item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* EMPTY STATE */
+
+.notification-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+    padding: 25px 16px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    text-align: center;
+}
+
+.notification-empty-icon {
+    margin-bottom: 12px;
+}
+
+.notification-empty h3 {
+    color: var(--text);
+    font-size: 16px;
+}
+
+.notification-empty p {
+    max-width: 340px;
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* PRIVACY FOOTER */
+
+.notifications-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 9px;
+    padding: 17px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.notifications-footer i {
+    flex-shrink: 0;
+}
+
+/* TABLETS */
+
+@media (max-width: 768px) {
+    .notifications-page {
+        padding: 6px 2px 22px;
+    }
+
+    .notifications-header {
+        margin-bottom: 18px;
+    }
+}
+
+/* PHONES */
+
+@media (max-width: 600px) {
+    .page-content {
+        padding: 18px 14px !important;
+    }
+
+    .notifications-page {
+        padding: 4px 0 20px;
+    }
+
+    .notifications-header p {
+        font-size: 13px;
+    }
+
+    .notifications-mark-all {
+        width: auto;
+        min-height: 43px;
+    }
+
+    .notifications-stats {
+        gap: 9px;
+        margin-bottom: 14px;
+    }
+
+    .notification-stat {
+        min-height: 90px;
+        gap: 9px;
+        padding: 12px 9px;
+    }
+
+    .notification-stat-icon {
+        width: 35px;
+        height: 35px;
+    }
+
+    .notification-stat span {
+        font-size: 10px;
+    }
+
+    .notification-stat strong {
+        font-size: 23px;
+    }
+
+    .notifications-panel-header {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 15px;
+    }
+
+    .notification-filter-wrap,
+    .notification-filter-wrap select {
+        width: 100%;
+    }
+
+    .notification-item {
+        padding: 14px 12px;
+    }
+
+    .notification-empty {
+        min-height: 155px;
+    }
+}
+
+/* VERY SMALL PHONES */
+
+@media (max-width: 360px) {
+    .page-content {
+        padding: 15px 10px !important;
+    }
+
+    .notifications-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .notifications-mark-all {
+        width: 100%;
+    }
+   }
+   
 
     
