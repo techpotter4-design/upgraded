@@ -884,8 +884,8 @@ a {
     box-shadow: var(--shadow);
   }
 
-  .coach-sidebar.sidebar-open {
-    transform: translateX(0);
+  .coach-sidebar.active {
+  transform: translateX(0);
   }
 
   .sidebar-close {
