@@ -708,7 +708,8 @@ document.addEventListener("DOMContentLoaded", () => {
             "general",
             "habits",
             "mood",
-            "goals"
+            "goals",
+           "routine"
         ];
 
         if (!allowedModes.includes(selectedMode)) return;
@@ -775,8 +776,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         console.log("LifeTrack AI Coach V3 initialized.");
     }
+       initializeCoach();
 
-    initializeCoach();
+    // Render Lucide icons
+    if (window.lucide) {
+        window.lucide.createIcons();
+    } else {
+        console.error("LifeTrack: Lucide icons failed to load.");
+    }
 
 });
            
