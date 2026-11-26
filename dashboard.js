@@ -109,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const overlay = document.getElementById("sidebarOverlay");
     const closeButton = document.getElementById("sidebarCloseButton");
     const collapseButton = document.getElementById("sidebarCollapseButton");
-    const navigation = document.getElementById("sidebarNavigation");
+    const navigation = document.querySelector(".sidebar-nav");
     const logoutButton = document.getElementById("logoutButton");
 
     if (!sidebar || !navigation) return;
@@ -294,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // NOTIFICATIONS BUTTON
-    document.getElementById("notificationButton")
+    document.querySelector(".notification-button")
         ?.addEventListener("click", () => {
 
             const notificationLink =
