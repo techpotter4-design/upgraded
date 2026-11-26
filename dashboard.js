@@ -3333,6 +3333,187 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 })();
 
+// =====================================
+// 8A. CUSTOMER NOTIFICATION CENTRE
+// =====================================
+
+const notificationList = document.getElementById("notificationList");
+const notificationFilter = document.getElementById("notificationFilter");
+const markAllNotifications = document.getElementById("markAllNotifications");
+
+let customerNotifications = [];
+
+function updateNotificationCounts() {
+    const unread = customerNotifications.filter(item => !item.is_read).length;
+
+    const unreadElement = document.getElementById("unreadNotificationCount");
+    const totalElement = document.getElementById("totalNotificationCount");
+
+    if (unreadElement) unreadElement.textContent = unread;
+    if (totalElement) totalElement.textContent = customerNotifications.length;
+
+    document.querySelectorAll(".notification-count").forEach(element => {
+        element.textContent = unread;
+        element.style.display = unread > 0 ? "inline-flex" : "none";
+    });
+}
+
+function renderCustomerNotifications() {
+    if (!notificationList) return;
+
+    const filter = notificationFilter?.value || "all";
+
+    const filtered = customerNotifications.filter(item => {
+        if (filter === "unread") return !item.is_read;
+        if (filter === "read") return item.is_read;
+        return true;
+    });
+
+    notificationList.innerHTML = "";
+
+    if (!filtered.length) {
+        const empty = document.createElement("div");
+        empty.className = "notification-empty";
+
+        const heading = document.createElement("h3");
+        heading.textContent = filter === "all"
+            ? "You're all caught up"
+            : "No notifications found";
+
+        const message = document.createElement("p");
+        message.textContent = filter === "all"
+            ? "Your LifeTrack updates will appear here."
+            : "Try selecting another filter.";
+
+        empty.append(heading, message);
+        notificationList.appendChild(empty);
+        return;
+    }
+
+    filtered.forEach(item => {
+        const card = document.createElement("article");
+        card.className = `notification-item ${item.is_read ? "" : "unread"}`;
+
+        const content = document.createElement("div");
+        content.className = "notification-content";
+
+        const title = document.createElement("h3");
+        title.textContent = item.title;
+
+        const message = document.createElement("p");
+        message.textContent = item.message;
+
+        const date = document.createElement("small");
+        date.textContent = new Date(item.created_at).toLocaleString();
+
+        content.append(title, message, date);
+
+        const actions = document.createElement("div");
+        actions.className = "notification-actions";
+
+        if (!item.is_read) {
+            const readButton = document.createElement("button");
+            readButton.type = "button";
+            readButton.textContent = "Mark as read";
+
+            readButton.addEventListener("click", () => {
+                markCustomerNotificationRead(item.id);
+            });
+
+            actions.appendChild(readButton);
+        }
+
+        if (item.action_url) {
+            const actionLink = document.createElement("a");
+
+            actionLink.href = item.action_url;
+            actionLink.textContent = "View details";
+
+            actions.appendChild(actionLink);
+        }
+
+        card.append(content, actions);
+        notificationList.appendChild(card);
+    });
+
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+}
+
+async function loadCustomerNotifications() {
+    if (!notificationList) return;
+
+    notificationList.textContent = "Loading notifications...";
+
+    const { data, error } = await supabaseClient
+        .from("notifications")
+        .select(`
+            id,
+            title,
+            message,
+            category,
+            priority,
+            action_url,
+            is_read,
+            read_at,
+            created_at,
+            expires_at
+        `)
+        .eq("user_id", currentUser.id)
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        console.error("Notification loading error:", error);
+        notificationList.textContent =
+            "Unable to load notifications. Please try again.";
+        return;
+    }
+
+    const now = Date.now();
+
+    customerNotifications = (data || []).filter(item =>
+        !item.expires_at || new Date(item.expires_at).getTime() > now
+    );
+
+    updateNotificationCounts();
+    renderCustomerNotifications();
+}
+
+async function markCustomerNotificationRead(notificationId) {
+    const { data, error } = await supabaseClient.rpc(
+        "mark_notification_read",
+        { p_notification_id: notificationId }
+    );
+
+    if (error || data !== true) {
+        console.error("Could not mark notification as read:", error);
+        alert("Unable to update this notification.");
+        return;
+    }
+
+    await loadCustomerNotifications();
+}
+
+markAllNotifications?.addEventListener("click", async () => {
+    const { error } = await supabaseClient.rpc(
+        "mark_all_notifications_read"
+    );
+
+    if (error) {
+        console.error("Could not mark all notifications as read:", error);
+        alert("Unable to update your notifications.");
+        return;
+    }
+
+    await loadCustomerNotifications();
+});
+
+notificationFilter?.addEventListener("change", renderCustomerNotifications);
+
+loadCustomerNotifications();
+        
+
         
             
                                                 
