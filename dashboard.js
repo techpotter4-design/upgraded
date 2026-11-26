@@ -3337,182 +3337,270 @@ document.addEventListener("DOMContentLoaded", () => {
 // 8A. CUSTOMER NOTIFICATION CENTRE
 // =====================================
 
-const notificationList = document.getElementById("notificationList");
-const notificationFilter = document.getElementById("notificationFilter");
-const markAllNotifications = document.getElementById("markAllNotifications");
+            
+/* =========================================
+   SECTION 8A: CUSTOMER NOTIFICATION CENTRE
+========================================= */
 
-let customerNotifications = [];
+(() => {
+    "use strict";
 
-function updateNotificationCounts() {
-    const unread = customerNotifications.filter(item => !item.is_read).length;
+    const notificationList =
+        document.getElementById("notificationList");
 
-    const unreadElement = document.getElementById("unreadNotificationCount");
-    const totalElement = document.getElementById("totalNotificationCount");
+    const notificationFilter =
+        document.getElementById("notificationFilter");
 
-    if (unreadElement) unreadElement.textContent = unread;
-    if (totalElement) totalElement.textContent = customerNotifications.length;
+    const markAllButton =
+        document.getElementById("markAllNotifications");
 
-    document.querySelectorAll(".notification-count").forEach(element => {
-        element.textContent = unread;
-        element.style.display = unread > 0 ? "inline-flex" : "none";
-    });
-}
-
-function renderCustomerNotifications() {
     if (!notificationList) return;
 
-    const filter = notificationFilter?.value || "all";
+    let customerNotifications = [];
 
-    const filtered = customerNotifications.filter(item => {
-        if (filter === "unread") return !item.is_read;
-        if (filter === "read") return item.is_read;
-        return true;
-    });
+    function updateNotificationCounts() {
+        const unread = customerNotifications.filter(
+            item => !item.is_read
+        ).length;
 
-    notificationList.innerHTML = "";
+        document.getElementById("unreadNotificationCount")
+            ?.replaceChildren(String(unread));
 
-    if (!filtered.length) {
-        const empty = document.createElement("div");
-        empty.className = "notification-empty";
+        document.getElementById("totalNotificationCount")
+            ?.replaceChildren(String(customerNotifications.length));
 
-        const heading = document.createElement("h3");
-        heading.textContent = filter === "all"
-            ? "You're all caught up"
-            : "No notifications found";
-
-        const message = document.createElement("p");
-        message.textContent = filter === "all"
-            ? "Your LifeTrack updates will appear here."
-            : "Try selecting another filter.";
-
-        empty.append(heading, message);
-        notificationList.appendChild(empty);
-        return;
-    }
-
-    filtered.forEach(item => {
-        const card = document.createElement("article");
-        card.className = `notification-item ${item.is_read ? "" : "unread"}`;
-
-        const content = document.createElement("div");
-        content.className = "notification-content";
-
-        const title = document.createElement("h3");
-        title.textContent = item.title;
-
-        const message = document.createElement("p");
-        message.textContent = item.message;
-
-        const date = document.createElement("small");
-        date.textContent = new Date(item.created_at).toLocaleString();
-
-        content.append(title, message, date);
-
-        const actions = document.createElement("div");
-        actions.className = "notification-actions";
-
-        if (!item.is_read) {
-            const readButton = document.createElement("button");
-            readButton.type = "button";
-            readButton.textContent = "Mark as read";
-
-            readButton.addEventListener("click", () => {
-                markCustomerNotificationRead(item.id);
+        document.querySelectorAll(".notification-count")
+            .forEach(element => {
+                element.textContent = unread;
+                element.style.display =
+                    unread > 0 ? "inline-flex" : "none";
             });
-
-            actions.appendChild(readButton);
-        }
-
-        if (item.action_url) {
-            const actionLink = document.createElement("a");
-
-            actionLink.href = item.action_url;
-            actionLink.textContent = "View details";
-
-            actions.appendChild(actionLink);
-        }
-
-        card.append(content, actions);
-        notificationList.appendChild(card);
-    });
-
-    if (window.lucide) {
-        window.lucide.createIcons();
     }
-}
 
-async function loadCustomerNotifications() {
-    if (!notificationList) return;
+    function renderCustomerNotifications() {
+        const filter = notificationFilter?.value || "all";
 
-    notificationList.textContent = "Loading notifications...";
+        const filtered = customerNotifications.filter(item => {
+            if (filter === "unread") return !item.is_read;
+            if (filter === "read") return item.is_read;
+            return true;
+        });
 
-    const { data, error } = await supabaseClient
-        .from("notifications")
-        .select(`
-            id,
-            title,
-            message,
-            category,
-            priority,
-            action_url,
-            is_read,
-            read_at,
-            created_at,
-            expires_at
-        `)
-        .eq("user_id", currentUser.id)
-        .order("created_at", { ascending: false });
+        notificationList.replaceChildren();
 
-    if (error) {
-        console.error("Notification loading error:", error);
+        if (!filtered.length) {
+            const empty = document.createElement("div");
+            empty.className = "notification-empty";
+
+            const heading = document.createElement("h3");
+            heading.textContent = filter === "all"
+                ? "You're all caught up"
+                : "No notifications found";
+
+            const message = document.createElement("p");
+            message.textContent = filter === "all"
+                ? "Your LifeTrack updates will appear here."
+                : "Try selecting another filter.";
+
+            empty.append(heading, message);
+            notificationList.appendChild(empty);
+            return;
+        }
+
+        filtered.forEach(item => {
+            const card = document.createElement("article");
+            card.className =
+                `notification-item ${item.is_read ? "" : "unread"}`;
+
+            const content = document.createElement("div");
+            content.className = "notification-content";
+
+            const title = document.createElement("h3");
+            title.textContent = item.title;
+
+            const message = document.createElement("p");
+            message.textContent = item.message;
+
+            const date = document.createElement("small");
+            date.textContent =
+                new Date(item.created_at).toLocaleString();
+
+            content.append(title, message, date);
+
+            const actions = document.createElement("div");
+            actions.className = "notification-actions";
+
+            if (!item.is_read) {
+                const readButton = document.createElement("button");
+                readButton.type = "button";
+                readButton.textContent = "Mark as read";
+
+                readButton.addEventListener("click", () => {
+                    markNotificationRead(item.id);
+                });
+
+                actions.appendChild(readButton);
+            }
+
+            if (item.action_url) {
+                const link = document.createElement("a");
+                link.href = item.action_url;
+                link.textContent = "View details";
+
+                actions.appendChild(link);
+            }
+
+            card.append(content, actions);
+            notificationList.appendChild(card);
+        });
+
+        window.lucide?.createIcons();
+    }
+
+    async function loadCustomerNotifications() {
+        const app = window.LifeTrack;
+        const db = app?.db;
+        const user = app?.user;
+
+        if (!db || !user) {
+            console.error(
+                "Notifications: Database or authenticated user unavailable."
+            );
+            notificationList.textContent =
+                "Unable to verify your account. Please refresh.";
+            return;
+        }
+
         notificationList.textContent =
-            "Unable to load notifications. Please try again.";
-        return;
+            "Loading notifications...";
+
+        try {
+            const { data, error } = await db
+                .from("notifications")
+                .select(`
+                    id,
+                    title,
+                    message,
+                    category,
+                    priority,
+                    action_url,
+                    is_read,
+                    read_at,
+                    created_at,
+                    expires_at
+                `)
+                .eq("user_id", user.id)
+                .order("created_at", { ascending: false });
+
+            if (error) throw error;
+
+            const now = Date.now();
+
+            customerNotifications = (data || []).filter(item =>
+                !item.expires_at ||
+                new Date(item.expires_at).getTime() > now
+            );
+
+            updateNotificationCounts();
+            renderCustomerNotifications();
+
+            console.log(
+                "LifeTrack: Notifications loaded successfully."
+            );
+
+        } catch (error) {
+            console.error(
+                "Notification loading error:",
+                error
+            );
+
+            notificationList.textContent =
+                "Unable to load notifications. Please try again.";
+        }
     }
 
-    const now = Date.now();
+    async function markNotificationRead(notificationId) {
+        const db = window.LifeTrack?.db;
 
-    customerNotifications = (data || []).filter(item =>
-        !item.expires_at || new Date(item.expires_at).getTime() > now
-    );
+        if (!db) return;
 
-    updateNotificationCounts();
-    renderCustomerNotifications();
-}
+        try {
+            const { data, error } = await db.rpc(
+                "mark_notification_read",
+                { p_notification_id: notificationId }
+            );
 
-async function markCustomerNotificationRead(notificationId) {
-    const { data, error } = await supabaseClient.rpc(
-        "mark_notification_read",
-        { p_notification_id: notificationId }
-    );
+            if (error) throw error;
 
-    if (error || data !== true) {
-        console.error("Could not mark notification as read:", error);
-        alert("Unable to update this notification.");
-        return;
+            if (data !== true) {
+                throw new Error("Notification was not updated.");
+            }
+
+            await loadCustomerNotifications();
+
+        } catch (error) {
+            console.error(
+                "Mark notification read error:",
+                error
+            );
+
+            alert("Unable to update this notification.");
+        }
     }
 
-    await loadCustomerNotifications();
-}
+    async function markAllNotificationsRead() {
+        const db = window.LifeTrack?.db;
 
-markAllNotifications?.addEventListener("click", async () => {
-    const { error } = await supabaseClient.rpc(
-        "mark_all_notifications_read"
-    );
+        if (!db) return;
 
-    if (error) {
-        console.error("Could not mark all notifications as read:", error);
-        alert("Unable to update your notifications.");
-        return;
+        markAllButton.disabled = true;
+
+        try {
+            const { error } = await db.rpc(
+                "mark_all_notifications_read"
+            );
+
+            if (error) throw error;
+
+            await loadCustomerNotifications();
+
+        } catch (error) {
+            console.error(
+                "Mark all notifications error:",
+                error
+            );
+
+            alert("Unable to update your notifications.");
+
+        } finally {
+            markAllButton.disabled = false;
+        }
     }
 
-    await loadCustomerNotifications();
-});
+    markAllButton?.addEventListener(
+        "click",
+        markAllNotificationsRead
+    );
 
-notificationFilter?.addEventListener("change", renderCustomerNotifications);
+    notificationFilter?.addEventListener(
+        "change",
+        renderCustomerNotifications
+    );
 
-loadCustomerNotifications();
-        
+    // Wait until LifeTrack authentication completes.
+    document.addEventListener(
+        "lifetrack:ready",
+        loadCustomerNotifications,
+        { once: true }
+    );
+
+    // Support an already authenticated session.
+    if (window.LifeTrack?.user) {
+        loadCustomerNotifications();
+    }
+
+})();
+                
 
         
             
