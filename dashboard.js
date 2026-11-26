@@ -109,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const overlay = document.getElementById("sidebarOverlay");
     const closeButton = document.getElementById("sidebarCloseButton");
     const collapseButton = document.getElementById("sidebarCollapseButton");
-    const navigation = document.querySelector(".sidebar-nav");
+    const navigation = document.getElementById("sidebarNavigation");
     const logoutButton = document.getElementById("logoutButton");
 
     if (!sidebar || !navigation) return;
@@ -167,8 +167,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (!section) return;
+        const target = document.getElementById(
+    "section-" + section
+);
 
-        const target = document.getElementById(section);
 
         if (!target) {
             console.warn("Section not ready:", section);
@@ -294,16 +296,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // NOTIFICATIONS BUTTON
-    document.querySelector(".notification-button")
-        ?.addEventListener("click", () => {
+    document.getElementById("notificationButton")
+    ?.addEventListener("click", () => {
 
-            const notificationLink =
-    document.querySelector(
-        '.sidebar-nav .nav-link[data-section="notifications"]'
-    );
+        const notificationLink =
+            document.querySelector(
+                '#sidebarNavigation [data-section="notifications"]'
+            );
 
-            notificationLink?.click();
-        });
+        notificationLink?.click();
+    });
 
     // REFRESH ICONS
     if (window.lucide) {
