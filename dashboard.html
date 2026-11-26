@@ -1460,6 +1460,56 @@ iv class="achievement-toolbar">
 
 </section>
             
+<!-- NOTIFICATIONS SECTION -->
+<section class="dashboard-section" id="section-notifications" hidden>
+
+    <div class="section-header">
+        <div>
+            <h2>Notifications</h2>
+            <p>Stay updated on your habits, goals, and account activity.</p>
+        </div>
+
+        <button class="notification-mark-all" id="markAllNotifications">
+            Mark all as read
+        </button>
+    </div>
+
+    <div class="notification-summary">
+        <div class="notification-summary-card">
+            <span>Unread notifications</span>
+            <strong id="unreadNotificationCount">0</strong>
+        </div>
+
+        <div class="notification-summary-card">
+            <span>Total notifications</span>
+            <strong id="totalNotificationCount">0</strong>
+        </div>
+    </div>
+
+    <div class="notification-toolbar">
+        <h3>Recent activity</h3>
+
+        <select id="notificationFilter">
+            <option value="all">All notifications</option>
+            <option value="unread">Unread only</option>
+            <option value="read">Read only</option>
+        </select>
+    </div>
+
+    <div class="notification-list" id="notificationList">
+
+        <div class="notification-empty" id="notificationEmpty">
+            <i data-lucide="bell"></i>
+            <h3>You're all caught up!</h3>
+            <p>New notifications will appear here.</p>
+        </div>
+
+    </div>
+
+</section>
+<!-- END NOTIFICATIONS SECTION -->
+            
+            
     
 </div>
             <!-- END DASHBOARD CONTENT -->
