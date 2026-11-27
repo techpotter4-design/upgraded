@@ -3,7 +3,7 @@
     "use strict";
 
     const SUPABASE_URL =
-        "https://zfmwecpowwhdhxgdbtor.supabase.co";
+        "https://lqulzslsyyxvoatyjlch.supabase.co";
 
     const SUPABASE_PUBLISHABLE_KEY =
         "sb_publishable_8BthqYECrHbDfTi1De89lg_GquT4dkN";
