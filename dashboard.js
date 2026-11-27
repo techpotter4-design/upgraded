@@ -544,15 +544,33 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const record = {
-            user_id: app.user.id,
-            title: $("habitName").value.trim(),
-            description: $("habitDescription").value.trim(),
-            frequency,
-            target_days: targetDays,
-            color: $("habitColor").value,
-            is_active: true
-        };
+        const reminderEnabled =
+    $("habitReminderEnabled").checked;
+
+const reminderTime =
+    $("habitReminderTime").value;
+
+if (reminderEnabled && !reminderTime) {
+    alert("Please choose a reminder time.");
+    return;
+}
+
+const timezone =
+    Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+const record = {
+    user_id: app.user.id,
+    title: $("habitName").value.trim(),
+    description: $("habitDescription").value.trim(),
+    frequency,
+    target_days: targetDays,
+    color: $("habitColor").value,
+    is_active: true,
+
+    reminder_time: reminderEnabled ? reminderTime : null,
+    reminder_enabled: reminderEnabled,
+    reminder_timezone: timezone
+};
 
         if (!record.title) return;
 
