@@ -720,6 +720,11 @@ const record = {
         $("habitDescription").value = habit.description || "";
         $("habitFrequency").value = habit.frequency;
         $("habitColor").value = habit.color || "#8b5cf6";
+        $("habitReminderTime").value =
+    habit.reminder_time || "";
+
+$("habitReminderEnabled").checked =
+    habit.reminder_enabled === true;
 
         form.querySelectorAll(".habit-days input")
             .forEach(input => {
