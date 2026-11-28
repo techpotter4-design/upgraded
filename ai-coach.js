@@ -371,7 +371,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const requestId = createRequestId();
 
         const { data, error } = await client.functions.invoke(
-            "lifetrack-ai-coach",
+            "hyper-endpoint",
             {
                 body: {
                     requestId,
