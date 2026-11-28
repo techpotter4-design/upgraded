@@ -403,18 +403,20 @@ document.addEventListener("DOMContentLoaded", () => {
             throw new Error(message);
         }
 
-        if (!data || data.success !== true ||
-            typeof data.answer !== "string" ||
-            !data.answer.trim()) {
-            throw new Error(
-                data && data.error
-                    ? data.error
-                    : "The AI Coach returned an invalid response."
-            );
-        }
+        if (
+    !data ||
+    data.success !== true ||
+    typeof data.reply !== "string" ||
+    !data.reply.trim()
+) {
+    throw new Error(
+        data && data.error
+            ? data.error
+            : "The AI Coach returned an invalid response."
+    );
+}
 
-        return data.answer.trim();
-    }
+return data.reply.trim();
 
    
     // ======================================
